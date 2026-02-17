@@ -1,0 +1,11 @@
+127.0.0.1 - - [17/Feb/2026 16:53:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 16:53:52] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 16:53:52] "GET /css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 16:53:52] "GET /js/tailwindcss.js HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 16:53:53] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 16:53:53] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 16:53:53] code 404, message File not found
+127.0.0.1 - - [17/Feb/2026 16:53:53] "GET /css/themes.css HTTP/1.1" 404 -
+127.0.0.1 - - [17/Feb/2026 16:53:53] code 404, message File not found
+127.0.0.1 - - [17/Feb/2026 16:53:53] "GET /css/error.css HTTP/1.1" 404 -
+127.0.0.1 - - [17/Feb/2026 16:53:53] "GET /py-worker.js HTTP/1.1" 200 -

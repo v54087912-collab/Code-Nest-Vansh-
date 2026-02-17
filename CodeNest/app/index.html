@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
+    <title>CodeNest IDE</title>
+
+    <!-- Tailwind CSS -->
+    <script src="./js/tailwindcss.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#121212',
+                        darker: '#0a0a0a',
+                        surface: '#1e1e1e',
+                        accent: '#22c55e',
+                        accentHover: '#16a34a',
+                        text: '#e0e0e0',
+                        muted: '#a0a0a0',
+                        border: '#333333'
+                    },
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#121212">
+</head>
+<body class="bg-darker text-text font-sans h-screen w-screen overflow-hidden select-none">
+
+    <!-- Loading View -->
+    <div id="view-loading" class="fixed inset-0 bg-darker z-[100] flex flex-col items-center justify-center p-6 hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mb-4"></div>
+        <h2 class="text-xl font-bold">CodeNest IDE</h2>
+        <p class="text-muted text-sm mt-2">Initializing Environment...</p>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div id="view-home" class="absolute inset-0 flex flex-col items-center justify-center bg-darker z-50 p-6 transition-opacity duration-300">
+        <!-- Logo -->
+        <div class="mb-12 flex flex-col items-center animate-fade-in-up">
+            <div class="w-20 h-20 bg-accent rounded-2xl flex items-center justify-center shadow-2xl shadow-green-500/20 mb-4 transform rotate-3 hover:rotate-6 transition-transform">
+                <i class="fa-solid fa-code text-darker text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight text-white">CodeNest <span class="text-accent">IDE</span></h1>
+            <p class="text-muted text-sm mt-2">Professional Mobile Coding</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="w-full max-w-xs space-y-4 animate-fade-in-up delay-100">
+            <button id="btn-new-project" class="w-full bg-accent hover:bg-accentHover text-darker font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-plus"></i> New Project
+            </button>
+            <button id="btn-open-project" class="w-full bg-surface hover:bg-white/5 text-white font-medium py-4 rounded-xl border border-border transition-all active:scale-95 flex items-center justify-center gap-3">
+                <i class="fa-regular fa-folder-open"></i> Open Project
+            </button>
+        </div>
+
+        <!-- Recent Projects -->
+        <div class="w-full max-w-xs mt-12 animate-fade-in-up delay-200">
+            <h3 class="text-xs font-bold text-muted uppercase tracking-wider mb-4 px-1">Recent Projects</h3>
+            <div id="recent-projects-list" class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                <!-- Items populated by JS -->
+                <div class="text-muted text-xs text-center py-4 italic">No recent projects</div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-6 text-center text-xs text-muted/30">
+            v1.0.0 • Clean Architecture
+        </div>
+    </div>
+
+    <!-- EDITOR SCREEN -->
+    <div id="view-editor" class="absolute inset-0 bg-darker flex flex-col hidden opacity-0 transition-opacity duration-300">
+
+        <!-- Minimal Top Bar -->
+        <header class="h-12 bg-dark/80 backdrop-blur-md flex items-center justify-between px-4 border-b border-white/5 z-20 shrink-0">
+            <!-- Left: Menu Trigger (Files) -->
+            <button id="btn-toggle-files" class="w-8 h-8 flex items-center justify-center text-muted hover:text-white transition-colors">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <!-- Center: Filename -->
+            <div class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px-3 py-1 rounded-full transition-colors" id="btn-file-info">
+                <i id="file-icon" class="fa-brands fa-python text-accent text-xs"></i>
+                <span id="current-filename" class="font-bold text-sm text-gray-200">main.py</span>
+            </div>
+
+            <!-- Right: Settings / More -->
+            <button id="btn-settings" class="w-8 h-8 flex items-center justify-center text-muted hover:text-white transition-colors">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </header>
+
+        <!-- Main Editor Area -->
+        <main class="flex-1 relative overflow-hidden flex flex-row">
+            <!-- Editor Container -->
+            <div id="editor-wrapper" class="flex-1 relative h-full flex flex-col">
+                <div id="editor-container" class="flex-1 text-sm font-mono relative"></div>
+
+                <!-- Smart Keyboard Toolbar -->
+                <div id="toolbar-keyboard" class="h-12 bg-surface border-t border-white/10 flex items-center px-2 gap-2 overflow-x-auto whitespace-nowrap hide-scrollbar shrink-0 z-20">
+                    <button class="key-btn" data-key="TAB"><i class="fa-solid fa-arrow-right-long text-[10px]"></i></button>
+                    <button class="key-btn" data-key="{">{</button>
+                    <button class="key-btn" data-key="}">}</button>
+                    <button class="key-btn" data-key="(">(</button>
+                    <button class="key-btn" data-key=")">)</button>
+                    <button class="key-btn" data-key="[">[</button>
+                    <button class="key-btn" data-key="]">]</button>
+                    <button class="key-btn" data-key='"'>"</button>
+                    <button class="key-btn" data-key="'">'</button>
+                    <button class="key-btn" data-key="undo"><i class="fa-solid fa-rotate-left text-[10px]"></i></button>
+                    <button class="key-btn" data-key="redo"><i class="fa-solid fa-rotate-right text-[10px]"></i></button>
+                </div>
+            </div>
+
+            <!-- Live Preview Split (Hidden by default) -->
+            <div id="panel-preview" class="hidden w-1/2 border-l border-border bg-white relative flex flex-col">
+                 <div class="h-8 bg-gray-100 flex items-center justify-between px-2 border-b border-gray-300">
+                    <span class="text-xs font-bold text-gray-500">Preview</span>
+                    <div class="flex gap-2">
+                        <button id="btn-toggle-preview-mode" class="text-gray-500 hover:text-blue-500"><i class="fa-solid fa-mobile-screen"></i></button>
+                        <button id="btn-close-preview" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-gray-200 flex items-center justify-center overflow-auto">
+                    <iframe id="preview-frame" class="w-full h-full border-none bg-white shadow-lg transition-all duration-300"></iframe>
+                </div>
+            </div>
+        </main>
+
+        <!-- Floating Run Button (Moved slightly up to accommodate toolbar if needed, but toolbar is inside flex col above) -->
+        <button id="btn-run-floating" class="absolute bottom-16 right-6 w-14 h-14 bg-accent text-darker rounded-2xl shadow-xl shadow-green-500/20 flex items-center justify-center z-30 transition-transform active:scale-90 hover:bg-accentHover group">
+            <i class="fa-solid fa-play text-xl group-hover:scale-110 transition-transform ml-1"></i>
+        </button>
+
+        <!-- Collapsible File Explorer (Left Sidebar) -->
+        <div id="panel-files" class="fixed inset-y-0 left-0 w-72 bg-surface shadow-2xl transform -translate-x-full transition-transform duration-300 z-40 flex flex-col border-r border-white/5">
+            <div class="h-14 flex items-center justify-between px-4 border-b border-white/5 bg-dark">
+                <span class="font-bold text-white">Files</span>
+                <div class="flex gap-2">
+                    <button id="btn-new-file" class="text-muted hover:text-accent"><i class="fa-solid fa-file-circle-plus"></i></button>
+                    <button id="btn-new-folder" class="text-muted hover:text-accent"><i class="fa-solid fa-folder-plus"></i></button>
+                </div>
+            </div>
+            <div id="file-tree" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <!-- Tree populated by JS -->
+            </div>
+             <div class="p-4 border-t border-white/5">
+                <button id="btn-home" class="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-muted flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Home
+                </button>
+            </div>
+        </div>
+        <div id="overlay-files" class="fixed inset-0 bg-black/50 z-30 hidden backdrop-blur-sm transition-opacity"></div>
+
+        <!-- Collapsible Console (Bottom Sheet) -->
+        <div id="panel-console" class="fixed inset-x-0 bottom-0 h-[40vh] bg-surface shadow-[0_-5px_20px_rgba(0,0,0,0.5)] transform translate-y-full transition-transform duration-300 z-50 flex flex-col border-t border-white/10 rounded-t-2xl">
+            <!-- Handle -->
+            <div class="h-8 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-t-2xl" id="console-handle">
+                <div class="w-12 h-1 bg-white/20 rounded-full"></div>
+            </div>
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 pb-2 border-b border-white/5">
+                <span class="text-xs font-bold text-muted uppercase tracking-wider">Output / Terminal</span>
+                 <div class="flex gap-3">
+                    <button id="btn-clear-console" class="text-muted hover:text-white"><i class="fa-solid fa-trash-can"></i></button>
+                    <button id="btn-close-console" class="text-muted hover:text-white"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+            </div>
+            <!-- Output -->
+            <div id="console-output" class="flex-1 overflow-y-auto p-3 font-mono text-xs text-gray-300 whitespace-pre-wrap bg-darker mx-2 mb-2 rounded-lg terminal-container">
+                <div class="terminal-system">Ready.</div>
+            </div>
+        </div>
+
+        <!-- Settings / Library Manager Modal -->
+        <div id="modal-settings" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-surface w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border border-border flex flex-col max-h-[80vh]">
+                <div class="p-4 border-b border-border flex justify-between items-center bg-dark">
+                    <h3 class="font-bold text-white">Settings & Libraries</h3>
+                    <button id="btn-close-settings" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted hover:text-white">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 bg-darker space-y-6">
+                    <!-- Library Manager Section -->
+                    <div>
+                        <h4 class="text-xs font-bold text-accent uppercase tracking-wider mb-2">Python Libraries (PyPI)</h4>
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" id="input-lib-name" placeholder="Package name (e.g. pandas)" class="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent">
+                            <button id="btn-install-lib" class="bg-accent text-darker font-bold px-4 py-2 rounded-lg text-sm hover:bg-accentHover">Install</button>
+                        </div>
+                        <p class="text-[10px] text-muted">Powered by Micropip. Some packages may not be compatible with Pyodide.</p>
+                    </div>
+
+                    <!-- Other Settings (Placeholder) -->
+                    <div>
+                        <h4 class="text-xs font-bold text-accent uppercase tracking-wider mb-2">Editor</h4>
+                        <div class="flex justify-between items-center py-2 border-b border-white/5">
+                            <span class="text-sm text-gray-300">Word Wrap</span>
+                             <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" value="" class="sr-only peer" checked>
+                                <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent"></div>
+                            </label>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-white/5">
+                            <span class="text-sm text-gray-300">Line Numbers</span>
+                             <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" value="" class="sr-only peer" checked>
+                                <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="./script.js"></script>
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(console.error);
+        }
+    </script>
+</body>
+</html>
