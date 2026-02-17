@@ -1,0 +1,279 @@
+:root {
+    /* Default (Dark Mode) */
+    --color-dark: #1e1e1e;
+    --color-darker: #121212;
+    --color-accent: #22c55e;
+    --color-accent-hover: #16a34a;
+    --color-surface: #2d2d2d;
+    --color-border: #333333;
+    --color-text: #e0e0e0;
+    --color-text-muted: #9ca3af;
+    --color-hover-bg: rgba(255, 255, 255, 0.05);
+    --editor-font-size: 14px;
+    --bg-image: none;
+    --backdrop-blur: none;
+}
+
+/* Theme: Light Mode */
+body.theme-light {
+    --color-dark: #ffffff;
+    --color-darker: #f3f4f6;
+    --color-accent: #3b82f6;
+    --color-accent-hover: #2563eb;
+    --color-surface: #e5e7eb;
+    --color-border: #d1d5db;
+    --color-text: #1f2937;
+    --color-text-muted: #6b7280;
+    --color-hover-bg: rgba(0, 0, 0, 0.05);
+}
+
+/* Theme: AMOLED Black */
+body.theme-amoled {
+    --color-dark: #000000;
+    --color-darker: #000000;
+    --color-accent: #22c55e;
+    --color-accent-hover: #16a34a;
+    --color-surface: #121212;
+    --color-border: #333333;
+    --color-text: #ffffff;
+    --color-text-muted: #a0a0a0;
+}
+
+/* Theme: Minimal White */
+body.theme-minimal-white {
+    --color-dark: #ffffff;
+    --color-darker: #fafafa;
+    --color-accent: #171717;
+    --color-accent-hover: #000000;
+    --color-surface: #ffffff;
+    --color-border: #e5e5e5;
+    --color-text: #171717;
+    --color-text-muted: #737373;
+    --color-hover-bg: rgba(0, 0, 0, 0.05);
+}
+
+/* Theme: Neon Cyber */
+body.theme-neon-cyber {
+    --color-dark: #0b001a;
+    --color-darker: #05000d;
+    --color-accent: #d946ef; /* Magenta */
+    --color-accent-hover: #c026d3;
+    --color-surface: #2e004f;
+    --color-border: #4a0478;
+    --color-text: #e879f9;
+    --color-text-muted: #a855f7;
+}
+
+/* Theme: Material You (Simulated - Purple/Teal) */
+body.theme-material-you {
+    --color-dark: #fef7ff;
+    --color-darker: #fffbfe;
+    --color-accent: #6750a4;
+    --color-accent-hover: #4f378b;
+    --color-surface: #f3edf7;
+    --color-border: #cac4d0;
+    --color-text: #1d1b20;
+    --color-text-muted: #49454f;
+    --color-hover-bg: rgba(103, 80, 164, 0.08); /* Accent-tinted hover */
+}
+
+/* Theme: Glassmorphism */
+body.theme-glassmorphism {
+    --color-dark: rgba(30, 30, 30, 0.6);
+    --color-darker: #121212; /* Fallback for bg */
+    --color-accent: rgba(34, 197, 94, 0.8);
+    --color-accent-hover: rgba(22, 163, 74, 0.9);
+    --color-surface: rgba(255, 255, 255, 0.1);
+    --color-border: rgba(255, 255, 255, 0.2);
+    --color-text: #ffffff;
+    --color-text-muted: rgba(255, 255, 255, 0.6);
+    --bg-image: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    --backdrop-blur: blur(10px);
+}
+
+/* Theme: Flat Design */
+body.theme-flat {
+    --color-dark: #2c3e50;
+    --color-darker: #34495e;
+    --color-accent: #e74c3c;
+    --color-accent-hover: #c0392b;
+    --color-surface: #ecf0f1;
+    --color-border: #bdc3c7;
+    --color-text: #ecf0f1;
+    --color-text-muted: #bdc3c7;
+    --color-hover-bg: rgba(255, 255, 255, 0.1);
+}
+
+/* Theme: Gradient Flow */
+body.theme-gradient {
+    --color-dark: #240b36;
+    --color-darker: #10051a;
+    --color-accent: #c31432;
+    --color-accent-hover: #a10f28;
+    --color-surface: rgba(255,255,255,0.1);
+    --color-border: rgba(255,255,255,0.2);
+    --color-text: #ffffff;
+    --color-text-muted: #e0e0e0;
+    --bg-image: linear-gradient(to right, #240b36, #c31432);
+}
+
+/* Theme: Pastel Soft */
+body.theme-pastel {
+    --color-dark: #fdf2f8; /* Pink-50 */
+    --color-darker: #fff1f2;
+    --color-accent: #f472b6; /* Pink-400 */
+    --color-accent-hover: #ec4899;
+    --color-surface: #fce7f3;
+    --color-border: #fbcfe8;
+    --color-text: #831843;
+    --color-text-muted: #be185d;
+    --color-hover-bg: rgba(244, 114, 182, 0.1);
+}
+
+/* Theme: Hacker Terminal */
+body.theme-hacker {
+    --color-dark: #000000;
+    --color-darker: #0c0c0c;
+    --color-accent: #00ff00;
+    --color-accent-hover: #00cc00;
+    --color-surface: #0a0a0a;
+    --color-border: #003300;
+    --color-text: #00ff00;
+    --color-text-muted: #008800;
+}
+
+/* Theme: Retro Pixel */
+body.theme-retro {
+    --color-dark: #2b2b2b;
+    --color-darker: #202020;
+    --color-accent: #f0c040; /* Retro Yellow */
+    --color-accent-hover: #d0a020;
+    --color-surface: #404040;
+    --color-border: #606060;
+    --color-text: #e0e0e0;
+    --color-text-muted: #a0a0a0;
+}
+
+/* Theme: Futuristic AI */
+body.theme-futuristic {
+    --color-dark: #001f3f;
+    --color-darker: #001224;
+    --color-accent: #0074D9;
+    --color-accent-hover: #0056a3;
+    --color-surface: #003366;
+    --color-border: #004080;
+    --color-text: #7FDBFF;
+    --color-text-muted: #39CCCC;
+}
+
+/* Theme: Nature Green */
+body.theme-nature {
+    --color-dark: #1a2f1a;
+    --color-darker: #0f1c0f;
+    --color-accent: #4caf50;
+    --color-accent-hover: #388e3c;
+    --color-surface: #2e4d2e;
+    --color-border: #3c6e3c;
+    --color-text: #e8f5e9;
+    --color-text-muted: #a5d6a7;
+}
+
+/* Theme: Ocean Blue */
+body.theme-ocean {
+    --color-dark: #0d1b2a;
+    --color-darker: #050a10;
+    --color-accent: #00b4d8;
+    --color-accent-hover: #0096c7;
+    --color-surface: #1b263b;
+    --color-border: #415a77;
+    --color-text: #e0e1dd;
+    --color-text-muted: #778da9;
+}
+
+/* Theme: Sunset Orange */
+body.theme-sunset {
+    --color-dark: #2d130a;
+    --color-darker: #1a0804;
+    --color-accent: #ff6b35;
+    --color-accent-hover: #e85d2a;
+    --color-surface: #4a2015;
+    --color-border: #6d3325;
+    --color-text: #ffdecb;
+    --color-text-muted: #e0a995;
+}
+
+/* Theme: Monochrome */
+body.theme-monochrome {
+    --color-dark: #333333;
+    --color-darker: #222222;
+    --color-accent: #ffffff;
+    --color-accent-hover: #cccccc;
+    --color-surface: #444444;
+    --color-border: #555555;
+    --color-text: #ffffff;
+    --color-text-muted: #aaaaaa;
+}
+
+/* Theme: High Contrast */
+body.theme-high-contrast {
+    --color-dark: #000000;
+    --color-darker: #000000;
+    --color-accent: #ffff00;
+    --color-accent-hover: #cccc00;
+    --color-surface: #000000;
+    --color-border: #ffffff;
+    --color-text: #ffffff;
+    --color-text-muted: #ffff00;
+}
+
+/* Theme: Frosted Blur */
+body.theme-frosted {
+    --color-dark: rgba(255, 255, 255, 0.7);
+    --color-darker: #e0e0e0;
+    --color-accent: #007aff;
+    --color-accent-hover: #0056b3;
+    --color-surface: rgba(255, 255, 255, 0.5);
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-text: #333333;
+    --color-text-muted: #666666;
+    --color-hover-bg: rgba(0, 0, 0, 0.05);
+    --bg-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+    --backdrop-blur: blur(20px);
+}
+
+/* Theme: Classic Professional */
+body.theme-classic {
+    --color-dark: #f0f2f5;
+    --color-darker: #ffffff;
+    --color-accent: #0a66c2; /* LinkedIn Blueish */
+    --color-accent-hover: #004182;
+    --color-surface: #ffffff;
+    --color-border: #dfe3e8;
+    --color-text: #000000;
+    --color-text-muted: #666666;
+    --color-hover-bg: rgba(10, 102, 194, 0.08);
+}
+
+/* Apply background image if set */
+body {
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-attachment: fixed;
+    backdrop-filter: var(--backdrop-blur);
+    /* Ensure transitions for theme changes */
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Fix Editor Background for Transparent/Gradient Themes */
+body.theme-glassmorphism .cm-editor,
+body.theme-gradient .cm-editor,
+body.theme-frosted .cm-editor {
+    background-color: transparent !important;
+}
+
+body.theme-glassmorphism .cm-gutters,
+body.theme-gradient .cm-gutters,
+body.theme-frosted .cm-gutters {
+    background-color: rgba(0,0,0,0.1) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+}
