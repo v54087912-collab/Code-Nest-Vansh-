@@ -39,8 +39,11 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
+
+    <!-- Monaco Loader (CDN fallback, SW caches it) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js"></script>
 </head>
-<body class="bg-darker text-text font-sans h-screen w-screen overflow-hidden select-none">
+<body class="bg-darker text-text font-sans h-screen w-screen overflow-hidden select-none touch-pan-x touch-pan-y">
 
     <!-- Loading View -->
     <div id="view-loading" class="fixed inset-0 bg-darker z-[100] flex flex-col items-center justify-center p-6 hidden">
@@ -80,7 +83,7 @@
         </div>
 
         <div class="absolute bottom-6 text-center text-xs text-muted/30">
-            v1.0.0 • Clean Architecture
+            v2.0.0 • Monaco Engine
         </div>
     </div>
 
@@ -108,9 +111,9 @@
 
         <!-- Main Editor Area -->
         <main class="flex-1 relative overflow-hidden flex flex-row">
-            <!-- Editor Container -->
-            <div id="editor-wrapper" class="flex-1 relative h-full flex flex-col">
-                <div id="editor-container" class="flex-1 text-sm font-mono relative"></div>
+            <!-- Editor Container (Monaco requires explicit dimension, flex handles it) -->
+            <div id="editor-wrapper" class="flex-1 relative h-full flex flex-col min-w-0">
+                <div id="monaco-container" class="flex-1 w-full h-full relative"></div>
 
                 <!-- Smart Keyboard Toolbar -->
                 <div id="toolbar-keyboard" class="h-12 bg-surface border-t border-white/10 flex items-center px-2 gap-2 overflow-x-auto whitespace-nowrap hide-scrollbar shrink-0 z-20">
@@ -143,8 +146,8 @@
             </div>
         </main>
 
-        <!-- Floating Run Button (Moved slightly up to accommodate toolbar if needed, but toolbar is inside flex col above) -->
-        <button id="btn-run-floating" class="absolute bottom-16 right-6 w-14 h-14 bg-accent text-darker rounded-2xl shadow-xl shadow-green-500/20 flex items-center justify-center z-30 transition-transform active:scale-90 hover:bg-accentHover group">
+        <!-- Floating Run Button -->
+        <button id="btn-run-floating" class="absolute bottom-8 right-6 w-14 h-14 bg-accent text-darker rounded-2xl shadow-xl shadow-green-500/20 flex items-center justify-center z-30 transition-transform active:scale-90 hover:bg-accentHover group">
             <i class="fa-solid fa-play text-xl group-hover:scale-110 transition-transform ml-1"></i>
         </button>
 
@@ -208,20 +211,20 @@
                         <p class="text-[10px] text-muted">Powered by Micropip. Some packages may not be compatible with Pyodide.</p>
                     </div>
 
-                    <!-- Other Settings (Placeholder) -->
+                    <!-- Other Settings -->
                     <div>
                         <h4 class="text-xs font-bold text-accent uppercase tracking-wider mb-2">Editor</h4>
                         <div class="flex justify-between items-center py-2 border-b border-white/5">
-                            <span class="text-sm text-gray-300">Word Wrap</span>
+                            <span class="text-sm text-gray-300">Minimap</span>
                              <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" value="" class="sr-only peer" checked>
+                                <input type="checkbox" id="setting-minimap" class="sr-only peer" checked>
                                 <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent"></div>
                             </label>
                         </div>
                         <div class="flex justify-between items-center py-2 border-b border-white/5">
-                            <span class="text-sm text-gray-300">Line Numbers</span>
+                            <span class="text-sm text-gray-300">Word Wrap</span>
                              <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" value="" class="sr-only peer" checked>
+                                <input type="checkbox" id="setting-wordwrap" class="sr-only peer" checked>
                                 <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent"></div>
                             </label>
                         </div>

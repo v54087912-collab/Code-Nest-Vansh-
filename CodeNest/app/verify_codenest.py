@@ -46,13 +46,20 @@ def run():
 
         # Verify Editor Screen
         try:
-            page.wait_for_selector("#view-editor", state="visible", timeout=5000)
+            page.wait_for_selector("#view-editor", state="visible", timeout=10000)
             # Wait for transition
             time.sleep(1)
             filename = page.inner_text("#current-filename")
             print(f"Editor Open. File: {filename}")
             if "main.py" not in filename:
                 print("FAIL: Filename mismatch")
+
+            # Check for Monaco
+            if page.is_visible(".monaco-editor"):
+                print("PASS: Monaco Editor detected")
+            else:
+                print("FAIL: Monaco Editor not found (might still be loading)")
+
         except Exception as e:
             print(f"FAIL: Editor screen not visible. {e}")
             sys.exit(1)

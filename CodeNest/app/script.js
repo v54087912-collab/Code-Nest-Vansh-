@@ -1,8 +1,5 @@
-import { EditorView, basicSetup } from "https://esm.sh/codemirror";
-import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark";
-import { EditorState, Compartment, StateEffect } from "https://esm.sh/@codemirror/state";
-import { keymap } from "https://esm.sh/@codemirror/view";
-import { indentWithTab, undo, redo } from "https://esm.sh/@codemirror/commands";
+// CodeNest PWA IDE - Main Logic
+import { initDB, saveFile, getFile, getAllFiles, deleteFile } from './js/db.js';
 
 // DOM Elements
 const els = {
@@ -16,15 +13,12 @@ const els = {
     recentList: document.getElementById('recent-projects-list'),
 
     // Editor
-    editorContainer: document.getElementById('editor-container'),
+    monacoContainer: document.getElementById('monaco-container'),
     filenameDisplay: document.getElementById('current-filename'),
     fileIcon: document.getElementById('file-icon'),
     btnRun: document.getElementById('btn-run-floating'),
     btnToggleFiles: document.getElementById('btn-toggle-files'),
     btnSettings: document.getElementById('btn-settings'),
-
-    // Toolbar
-    toolbarKeyboard: document.getElementById('toolbar-keyboard'),
 
     // Panels
     panelFiles: document.getElementById('panel-files'),
@@ -44,6 +38,8 @@ const els = {
     btnCloseSettings: document.getElementById('btn-close-settings'),
     inputLibName: document.getElementById('input-lib-name'),
     btnInstallLib: document.getElementById('btn-install-lib'),
+    settingMinimap: document.getElementById('setting-minimap'),
+    settingWordWrap: document.getElementById('setting-wordwrap'),
 
     // Files
     fileTree: document.getElementById('file-tree'),
@@ -54,12 +50,10 @@ const els = {
 
 // State
 let state = {
-    files: {},
     currentProject: null,
     currentFile: null,
-    editor: null,
-    langCompartment: new Compartment(),
-    worker: null,
+    editor: null, // Monaco Instance
+    worker: null, // Pyodide Worker
     isRunning: false,
 
     // UI State
@@ -71,7 +65,8 @@ let state = {
 // --- Initialization ---
 
 async function init() {
-    loadFiles();
+    await initDB();
+    await checkFirstRun();
     renderRecentProjects();
 
     // Bind Events
@@ -98,49 +93,36 @@ async function init() {
 
     els.btnInstallLib.onclick = installLibrary;
 
-    // Toolbar keys
-    document.querySelectorAll('.key-btn').forEach(btn => {
-        btn.onclick = (e) => {
-            e.preventDefault();
-            const key = btn.dataset.key;
-            if (key === 'undo') undo(state.editor);
-            else if (key === 'redo') redo(state.editor);
-            else if (key === 'TAB') insertText('    ');
-            else insertText(key);
-        }
-    });
+    // Settings Listeners
+    els.settingMinimap.onchange = updateEditorSettings;
+    els.settingWordWrap.onchange = updateEditorSettings;
+
+    // Gestures
+    initGestures();
 
     // Load Python Environment in background
     initPythonWorker();
 }
 
-function loadFiles() {
-    const stored = localStorage.getItem('codenest_files');
-    if (stored) {
-        state.files = JSON.parse(stored);
-    } else {
-        // Default Demo Project
-        state.files = {
-            'Demo/main.py': '# Welcome to CodeNest\nprint("Hello World!")\n',
-            'Demo/script.js': 'console.log("Hello from JS");',
-            'Demo/index.html': '<h1>Hello HTML</h1>'
-        };
-        localStorage.setItem('codenest_files', JSON.stringify(state.files));
+async function checkFirstRun() {
+    const files = await getAllFiles();
+    if (files.length === 0) {
+        // Create Default Project
+        await saveFile('Demo/main.py', '# Welcome to CodeNest\nprint("Hello World!")\n');
+        await saveFile('Demo/script.js', 'console.log("Hello from JS");');
+        await saveFile('Demo/index.html', '<h1>Hello HTML</h1>');
     }
-}
-
-function saveFiles() {
-    localStorage.setItem('codenest_files', JSON.stringify(state.files));
 }
 
 // --- Home Screen Logic ---
 
-function renderRecentProjects() {
+async function renderRecentProjects() {
     els.recentList.innerHTML = '';
 
+    const files = await getAllFiles();
     const projects = new Set();
-    Object.keys(state.files).forEach(path => {
-        const parts = path.split('/');
+    files.forEach(f => {
+        const parts = f.path.split('/');
         if (parts.length > 1) projects.add(parts[0]);
     });
 
@@ -153,33 +135,16 @@ function renderRecentProjects() {
         const div = document.createElement('div');
         div.className = "flex items-center gap-3 p-3 bg-surface hover:bg-white/5 rounded-xl cursor-pointer transition-colors border border-white/5";
 
-        // Icon
-        const iconDiv = document.createElement('div');
-        iconDiv.className = "w-10 h-10 rounded-lg bg-green-900/20 flex items-center justify-center text-accent";
-        iconDiv.innerHTML = '<i class="fa-solid fa-cube text-lg"></i>';
-        div.appendChild(iconDiv);
-
-        // Text Container
-        const textDiv = document.createElement('div');
-        textDiv.className = "flex flex-col";
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = "font-bold text-sm text-white";
-        nameSpan.textContent = proj; // Safe textContent
-        textDiv.appendChild(nameSpan);
-
-        const metaSpan = document.createElement('span');
-        metaSpan.className = "text-[10px] text-muted";
-        metaSpan.textContent = "Project • 2m ago";
-        textDiv.appendChild(metaSpan);
-
-        div.appendChild(textDiv);
-
-        // Arrow
-        const arrow = document.createElement('i');
-        arrow.className = "fa-solid fa-chevron-right text-muted ml-auto text-xs";
-        div.appendChild(arrow);
-
+        div.innerHTML = `
+            <div class="w-10 h-10 rounded-lg bg-green-900/20 flex items-center justify-center text-accent">
+                <i class="fa-solid fa-cube text-lg"></i>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-bold text-sm text-white">${proj}</span>
+                <span class="text-[10px] text-muted">Project • Local</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-muted ml-auto text-xs"></i>
+        `;
         div.onclick = () => openProject(proj);
         els.recentList.appendChild(div);
     });
@@ -189,30 +154,30 @@ function createNewProject() {
     const name = prompt("Project Name:");
     if (!name) return;
 
-    const exists = Object.keys(state.files).some(k => k.startsWith(name + '/'));
-    if (exists) {
-        alert("Project already exists!");
-        return;
-    }
-
-    const mainFile = `${name}/main.py`;
-    state.files[mainFile] = `# ${name}\nprint("Hello CodeNest!")\n`;
-    saveFiles();
-
-    openProject(name);
+    // Basic check if already displayed, but strictly we should check DB
+    // For now, just create main.py
+    const mainPath = `${name}/main.py`;
+    saveFile(mainPath, `# ${name}\nprint("Hello CodeNest!")\n`).then(() => {
+        openProject(name);
+    });
 }
 
 function openProjectDialog() {
     alert("Select a project from the Recent list below.");
 }
 
-function openProject(name) {
+async function openProject(name) {
     state.currentProject = name;
 
-    const files = Object.keys(state.files).filter(k => k.startsWith(name + '/'));
-    const main = files.find(f => f.endsWith('main.py')) || files[0];
+    const files = await getAllFiles();
+    const projectFiles = files.filter(f => f.path.startsWith(name + '/'));
+    const main = projectFiles.find(f => f.path.endsWith('main.py')) || projectFiles[0];
 
-    switchToEditor(main);
+    if (main) {
+        switchToEditor(main.path);
+    } else {
+        alert("Empty project");
+    }
 }
 
 function goHome() {
@@ -227,7 +192,7 @@ function goHome() {
     }, 300);
 }
 
-// --- Editor Logic ---
+// --- Editor Logic (Monaco) ---
 
 async function switchToEditor(filename) {
     els.viewHome.classList.add('opacity-0');
@@ -241,12 +206,15 @@ async function switchToEditor(filename) {
     }, 300);
 }
 
+let monacoLoaded = false;
+
 async function loadEditor(filename) {
     if (!filename) return;
 
+    // Save previous if exists
     if (state.editor && state.currentFile) {
-        state.files[state.currentFile] = state.editor.state.doc.toString();
-        saveFiles();
+        const content = state.editor.getValue();
+        await saveFile(state.currentFile, content);
     }
 
     state.currentFile = filename;
@@ -255,61 +223,70 @@ async function loadEditor(filename) {
     updateFileIcon(filename);
     renderFileTree();
 
-    // Show Loading or Blank
-    els.editorContainer.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-muted text-xs">Loading Editor...</div>';
-
-    // Determine Language (Dynamic Import)
-    let langExt = [];
-    const ext = filename.split('.').pop();
-
-    try {
-        if (ext === 'py') {
-            const { python } = await import("https://esm.sh/@codemirror/lang-python");
-            langExt = python();
-        } else if (ext === 'js') {
-            const { javascript } = await import("https://esm.sh/@codemirror/lang-javascript");
-            langExt = javascript();
-        } else if (ext === 'ts') {
-            const { javascript } = await import("https://esm.sh/@codemirror/lang-javascript");
-            langExt = javascript({ typescript: true });
-        } else if (ext === 'html') {
-            const { html } = await import("https://esm.sh/@codemirror/lang-html");
-            langExt = html();
-        } else if (ext === 'css') {
-            const { css } = await import("https://esm.sh/@codemirror/lang-css");
-            langExt = css();
-        } else if (ext === 'java') {
-            const { java } = await import("https://esm.sh/@codemirror/lang-java");
-            langExt = java();
-        } else if (ext === 'php') {
-            const { php } = await import("https://esm.sh/@codemirror/lang-php");
-            langExt = php();
-        }
-        // Fallbacks for others (Kotlin, Dart -> Java; Ruby, Perl -> None/Text)
-        else if (ext === 'kt' || ext === 'dart') {
-            const { java } = await import("https://esm.sh/@codemirror/lang-java");
-            langExt = java();
-        }
-    } catch (e) {
-        console.error("Language load failed:", e);
+    // Ensure Monaco is loaded
+    if (!monacoLoaded) {
+        els.monacoContainer.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-muted text-xs">Loading Editor Engine...</div>';
+        await initMonaco();
+        monacoLoaded = true;
+        els.monacoContainer.innerHTML = '';
     }
 
-    els.editorContainer.innerHTML = ''; // Clear loading
+    const content = await getFile(filename) || "";
+    const ext = filename.split('.').pop();
+    let lang = 'python';
+    if (ext === 'js') lang = 'javascript';
+    if (ext === 'ts') lang = 'typescript';
+    if (ext === 'html') lang = 'html';
+    if (ext === 'css') lang = 'css';
+    if (ext === 'java') lang = 'java';
 
-    state.editor = new EditorView({
-        doc: state.files[filename] || "",
-        extensions: [
-            basicSetup,
-            oneDark,
-            state.langCompartment.of(langExt),
-            keymap.of([indentWithTab]),
-            EditorView.updateListener.of((update) => {
-                if (update.docChanged) {
-                    // Debounced save
-                }
-            })
-        ],
-        parent: els.editorContainer
+    // If editor exists, just update model
+    if (state.editor) {
+        const model = monaco.editor.createModel(content, lang);
+        state.editor.setModel(model);
+    } else {
+        // Create Editor
+        state.editor = monaco.editor.create(els.monacoContainer, {
+            value: content,
+            language: lang,
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: true },
+            fontSize: 14,
+            fontFamily: "'JetBrains Mono', monospace",
+            padding: { top: 20 }
+        });
+
+        // Auto-save on change
+        state.editor.onDidChangeModelContent(() => {
+            // Debounce save?
+            // For now direct save to memory/db
+            const val = state.editor.getValue();
+            // Don't await to avoid lag
+            saveFile(state.currentFile, val);
+        });
+    }
+}
+
+function initMonaco() {
+    return new Promise((resolve) => {
+        if (window.monaco) {
+            resolve();
+            return;
+        }
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            resolve();
+        });
+    });
+}
+
+function updateEditorSettings() {
+    if (!state.editor) return;
+
+    state.editor.updateOptions({
+        minimap: { enabled: els.settingMinimap.checked },
+        wordWrap: els.settingWordWrap.checked ? 'on' : 'off'
     });
 }
 
@@ -317,54 +294,40 @@ function updateFileIcon(filename) {
     let icon = "fa-file";
     if (filename.endsWith('.py')) icon = "fa-brands fa-python";
     else if (filename.endsWith('.js')) icon = "fa-brands fa-js";
-    else if (filename.endsWith('.ts')) icon = "fa-brands fa-js";
     else if (filename.endsWith('.html')) icon = "fa-brands fa-html5";
     else if (filename.endsWith('.css')) icon = "fa-brands fa-css3-alt";
     else if (filename.endsWith('.java')) icon = "fa-brands fa-java";
-    else if (filename.endsWith('.php')) icon = "fa-brands fa-php";
 
     els.fileIcon.className = `${icon} text-accent text-xs`;
 }
 
-function insertText(text) {
-    if (!state.editor) return;
-    const transaction = state.editor.state.update({
-        changes: {from: state.editor.state.selection.main.head, insert: text},
-        selection: {anchor: state.editor.state.selection.main.head + text.length}
-    });
-    state.editor.dispatch(transaction);
-    state.editor.focus();
-}
-
 // --- File Management ---
 
-function renderFileTree() {
+async function renderFileTree() {
     els.fileTree.innerHTML = '';
     if (!state.currentProject) return;
 
-    const prefix = state.currentProject + '/';
-    const files = Object.keys(state.files).filter(k => k.startsWith(prefix));
+    const files = await getAllFiles();
+    const projectFiles = files.filter(f => f.path.startsWith(state.currentProject + '/'));
 
-    files.forEach(path => {
-        const name = path.substring(prefix.length);
-        const isActive = path === state.currentFile;
+    projectFiles.forEach(fileObj => {
+        const name = fileObj.path.substring(state.currentProject.length + 1);
+        const isActive = fileObj.path === state.currentFile;
 
         const div = document.createElement('div');
         div.className = `file-item ${isActive ? 'active' : 'text-muted'}`;
 
-        // Icon
         const icon = document.createElement('i');
         icon.className = "fa-solid fa-file text-xs";
         div.appendChild(icon);
 
-        // Name
         const nameSpan = document.createElement('span');
         nameSpan.className = "text-sm truncate";
-        nameSpan.textContent = name; // Safe
+        nameSpan.textContent = name;
         div.appendChild(nameSpan);
 
         div.onclick = () => {
-            loadEditor(path);
+            loadEditor(fileObj.path);
             if (window.innerWidth < 768) toggleFiles(false);
         };
         els.fileTree.appendChild(div);
@@ -375,18 +338,15 @@ function createNewFile() {
     const name = prompt("File name (e.g. util.py):");
     if (!name) return;
     const path = `${state.currentProject}/${name}`;
-    if (state.files[path]) {
-        alert("File exists");
-        return;
-    }
-    state.files[path] = "";
-    saveFiles();
-    renderFileTree();
-    loadEditor(path);
+
+    saveFile(path, "").then(() => {
+        renderFileTree();
+        loadEditor(path);
+    });
 }
 
 function createNewFolder() {
-    alert("Folder creation not supported in MVP flat view.");
+    alert("Folder creation not supported in MVP.");
 }
 
 function toggleFiles(show) {
@@ -403,6 +363,50 @@ function toggleFiles(show) {
 function toggleSettings(show) {
     if (show) els.modalSettings.classList.remove('hidden');
     else els.modalSettings.classList.add('hidden');
+}
+
+// --- Gestures ---
+
+function initGestures() {
+    let startX = 0;
+    let startY = 0;
+
+    document.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    }, {passive: true});
+
+    document.addEventListener('touchend', e => {
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+
+        // Horizontal Swipe (Left/Right)
+        if (Math.abs(diffX) > 100 && Math.abs(diffY) < 50) {
+            // Swipe Right -> Open Files
+            if (diffX > 0 && startX < 50) { // Edge swipe
+                toggleFiles(true);
+            }
+            // Swipe Left -> Close Files (if open)
+            if (diffX < 0 && state.filesOpen) {
+                toggleFiles(false);
+            }
+        }
+
+        // Vertical Swipe (Up) -> Open Console
+        if (diffY < -100 && Math.abs(diffX) < 50) {
+            // Bottom edge swipe
+            if (startY > window.innerHeight - 50) {
+                toggleConsole(true);
+            }
+        }
+
+        // Vertical Swipe (Down) -> Close Console
+        if (diffY > 100 && Math.abs(diffX) < 50 && state.consoleOpen) {
+            toggleConsole(false);
+        }
+    }, {passive: true});
 }
 
 // --- Execution ---
@@ -429,10 +433,10 @@ function handleWorkerMessage(e) {
     }
 }
 
-function runCode() {
+async function runCode() {
+    // Save current
     if (state.editor) {
-        state.files[state.currentFile] = state.editor.state.doc.toString();
-        saveFiles();
+        await saveFile(state.currentFile, state.editor.getValue());
     }
 
     const ext = state.currentFile.split('.').pop();
@@ -442,11 +446,11 @@ function runCode() {
     } else if (ext === 'html' || ext === 'js') {
         runWeb();
     } else {
-        alert(`Runtime for .${ext} is not available in the browser.`);
+        alert(`Runtime for .${ext} is not available.`);
     }
 }
 
-function runPython() {
+async function runPython() {
     toggleConsole(true);
     els.consoleOutput.innerHTML = '<div class="terminal-system">Running...</div>';
 
@@ -455,19 +459,20 @@ function runPython() {
         return;
     }
 
-    const code = state.files[state.currentFile];
+    const code = await getFile(state.currentFile);
     state.worker.postMessage({ type: 'RUN', content: code });
 }
 
-function runWeb() {
+async function runWeb() {
     els.panelPreview.classList.remove('hidden');
 
     let htmlContent = "";
+    const raw = await getFile(state.currentFile);
 
     if (state.currentFile.endsWith('.html')) {
-        htmlContent = state.files[state.currentFile];
+        htmlContent = raw;
     } else if (state.currentFile.endsWith('.js')) {
-        htmlContent = `<html><body><script>${state.files[state.currentFile]}</script></body></html>`;
+        htmlContent = `<html><body><script>${raw}</script></body></html>`;
     }
 
     const blob = new Blob([htmlContent], { type: 'text/html' });
