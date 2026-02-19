@@ -1,13 +1,13 @@
 {
-  "name": "PyMobile Pro",
-  "short_name": "PyMobile",
+  "name": "CodeNest IDE",
+  "short_name": "CodeNest",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
-  "description": "Offline Python IDE for Mobile with Micropip support.",
+  "background_color": "#0a0a0a",
+  "theme_color": "#121212",
+  "description": "Professional Mobile Coding IDE for Python, JS, HTML, and more.",
   "orientation": "any",
-  "id": "/?pymobile_pro",
+  "id": "/?codenest_ide",
   "scope": "./",
   "lang": "en",
   "dir": "ltr",
@@ -32,32 +32,18 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Mobile Editor View"
-    },
-    {
-      "src": "./assets/screenshot-desktop.png",
-      "sizes": "1280x800",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Desktop Editor View"
     }
   ],
   "shortcuts": [
     {
-      "name": "New File",
+      "name": "New Project",
       "short_name": "New",
-      "description": "Create a new Python file",
+      "description": "Create a new project",
       "url": "./index.html?action=new",
-      "icons": [{ "src": "./assets/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Settings",
-      "short_name": "Settings",
-      "description": "Open App Settings",
-      "url": "./index.html?view=settings",
       "icons": [{ "src": "./assets/icon-192.png", "sizes": "192x192" }]
     }
   ],
-  "categories": ["education", "development", "productivity"],
+  "categories": ["development", "productivity"],
   "launch_handler": {
     "client_mode": "focus-existing"
   },
