@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CodeSphere IDE - Playground</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #1e1e1e; color: #d4d4d4; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .editor-font { font-family: 'JetBrains Mono', monospace; }
+        textarea::selection { background: #264f78; }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+    <!-- Top Bar -->
+    <div class="h-12 bg-[#2d2d2d] flex items-center px-4 justify-between border-b border-[#1e1e1e] shrink-0">
+        <div class="flex items-center gap-3">
+            <span class="text-[#2bba60] font-bold text-lg">🐍 CodeSphere IDE</span>
+            <div class="h-4 w-px bg-gray-600 mx-1"></div>
+            <span class="text-gray-400 text-sm">Playground</span>
+        </div>
+        <div class="flex items-center gap-3">
+             <button class="bg-[#2bba60] hover:bg-[#239a50] text-white px-3 py-1 rounded text-sm flex items-center gap-2 transition-colors">
+                <span>▶ Run</span>
+            </button>
+            <a href="/" class="text-sm text-gray-400 hover:text-white transition-colors bg-[#3c3c3c] px-3 py-1 rounded">← Exit</a>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <div class="w-64 bg-[#252526] flex flex-col border-r border-[#1e1e1e] hidden md:flex">
+            <div class="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Explorer</div>
+            <div class="flex-1 overflow-y-auto">
+                <div class="px-2">
+                    <div class="flex items-center gap-2 px-2 py-1 bg-[#37373d] text-white rounded cursor-pointer mb-1">
+                        <span class="text-yellow-400 text-xs">PY</span>
+                        <span class="text-sm">main.py</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-2 py-1 text-gray-400 hover:bg-[#2a2d2e] rounded cursor-pointer transition-colors mb-1">
+                        <span class="text-yellow-400 text-xs">PY</span>
+                        <span class="text-sm">utils.py</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-2 py-1 text-gray-400 hover:bg-[#2a2d2e] rounded cursor-pointer transition-colors">
+                        <span class="text-blue-400 text-xs">MD</span>
+                        <span class="text-sm">README.md</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Area -->
+        <div class="flex-1 flex flex-col bg-[#1e1e1e]">
+            <!-- Tabs -->
+            <div class="flex bg-[#252526] h-9 border-b border-[#1e1e1e]">
+                <div class="px-4 flex items-center bg-[#1e1e1e] text-yellow-500 border-t-2 border-yellow-500 text-sm min-w-[120px]">
+                    <span class="mr-2">📝</span> main.py
+                    <span class="ml-auto hover:bg-[#333] rounded p-1 cursor-pointer">×</span>
+                </div>
+            </div>
+
+            <!-- Code Editor -->
+            <div class="flex-1 relative">
+                <div class="absolute left-0 top-0 bottom-0 w-12 bg-[#1e1e1e] border-r border-[#333] flex flex-col items-end pt-4 pr-2 text-gray-600 text-sm editor-font select-none">
+                    <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div>
+                </div>
+                <textarea class="absolute left-12 right-0 top-0 bottom-0 bg-transparent text-gray-300 p-4 editor-font resize-none outline-none leading-6" spellcheck="false">
+# Welcome to CodeSphere Playground
+# Write your Python code here...
+
+import random
+
+def greet(name):
+    greetings = ["Hello", "Hi", "Welcome", "Code on"]
+    chosen = random.choice(greetings)
+    return f"{chosen}, {name}!"
+
+print(greet("Pythonista"))
+print(f"System Ready. running Python 3.11...")
+</textarea>
+            </div>
+
+            <!-- Terminal -->
+            <div class="h-48 bg-[#1e1e1e] border-t border-[#333] flex flex-col">
+                <div class="flex items-center justify-between px-4 py-1 bg-[#252526] border-b border-[#1e1e1e]">
+                    <div class="text-xs uppercase text-gray-400 font-bold">Terminal</div>
+                    <button class="text-gray-500 hover:text-gray-300">×</button>
+                </div>
+                <div class="flex-1 p-2 editor-font text-sm overflow-y-auto">
+                    <div class="text-green-400">➜  ~ python main.py</div>
+                    <div class="text-gray-300">Welcome, Pythonista!</div>
+                    <div class="text-gray-300">System Ready. running Python 3.11...</div>
+                    <div class="flex items-center gap-1 text-green-400 mt-1">
+                        <span>➜  ~</span>
+                        <span class="w-2 h-4 bg-gray-500 animate-pulse"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="h-6 bg-[#007acc] flex items-center px-3 justify-between text-xs text-white shrink-0">
+        <div class="flex gap-4">
+            <span>main.py</span>
+            <span>Ln 11, Col 1</span>
+        </div>
+        <div class="flex gap-4">
+            <span>Spaces: 4</span>
+            <span>UTF-8</span>
+            <span>Python 3.11</span>
+        </div>
+    </div>
+</body>
+</html>

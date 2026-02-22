@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSphere - Learn Python, Battle Coders, Earn Rewards</title>
+    <meta name="description" content="Master Python through games, battles & challenges. Earn CodeCoins. 100% Free.">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bg-deep': '#0c2218',
+                        'bg-card': '#14452f',
+                        'bg-surface': '#1a3d2b',
+                        'brand': '#2bba60',
+                        'brand-dim': '#2bba6033',
+                        'gold': '#FFC000',
+                        'gold-dim': '#FFC00033',
+                        'text-primary': '#e8f5ee',
+                        'text-muted': '#7db892',
+                        'text-dim': '#4a7a5a',
+                        'error': '#ff4d4d',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'coin-drop': 'coinDrop 1s ease-out forwards',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        coinDrop: {
+                            '0%': { transform: 'translateY(-20px)', opacity: '0' },
+                            '50%': { transform: 'translateY(0)', opacity: '1' },
+                            '100%': { transform: 'translateY(-10px)', opacity: '0' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0c2218; color: #e8f5ee; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0c2218; }
+        ::-webkit-scrollbar-thumb { background: #1a3d2b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2bba60; }
+    </style>
+</head>
+<body class="bg-bg-deep text-text-primary min-h-screen selection:bg-brand selection:text-white overflow-x-hidden">
+    <div id="app" class="min-h-screen flex flex-col">
+        <!-- Content injected by js/codesphere.js -->
+    </div>
+    <script src="js/codesphere.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
