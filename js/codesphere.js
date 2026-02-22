@@ -221,14 +221,37 @@ const state = {
     user: null, // null if logged out
     currentTheme: 'dark',
     activeGameTab: 'beginner',
+    isAdmin: false
 };
 
 // --- Router ---
-function router() {
+async function router() {
     const hash = window.location.hash || '#/';
     const path = hash.split('?')[0]; // simple path matching
-    console.log('Router navigating to:', path, 'User:', state.user ? state.user.username : 'guest');
     const app = document.getElementById('app');
+
+    // Session Check (Restore State)
+    if (!state.user && window.sb) {
+        const session = await window.sb.getSession();
+        if (session) {
+            console.log('Restoring session for:', session.user.email);
+            // In a real app, fetch profile from DB. Here we check admin or use mock.
+            if (session.user.email === ADMIN_CREDENTIALS.email) {
+                state.user = { name: 'Admin Vansh', username: 'admin', cc: 99999, xp: 99999, streak: 999, completedTopics: [], solvedChallenges: [], inventory: [], battles: { w: 999, l: 0 } };
+                state.isAdmin = true;
+            } else {
+                // Restore Mock User State
+                state.user = {
+                    ...MOCK_USER,
+                    email: session.user.email,
+                    username: session.user.email.split('@')[0]
+                };
+                state.isAdmin = false;
+            }
+        }
+    }
+
+    console.log('Router navigating to:', path, 'User:', state.user ? state.user.username : 'guest');
 
     // Clear previous view
     app.innerHTML = '';
@@ -335,8 +358,8 @@ function requireAuth(renderFn) {
     }
 }
 
-function login(email, pass) {
-    // Admin Check
+async function login(email, pass) {
+    // 1. Check Hardcoded Admin (Backdoor for demo)
     if (email === ADMIN_CREDENTIALS.email && pass === ADMIN_CREDENTIALS.pass) {
         state.user = { name: 'Admin Vansh', username: 'admin', cc: 99999, xp: 99999, streak: 999, completedTopics: [], solvedChallenges: [], inventory: [], battles: { w: 999, l: 0 } };
         state.isAdmin = true;
@@ -344,14 +367,39 @@ function login(email, pass) {
         return;
     }
 
-    // Default User Login
-    state.user = { ...MOCK_USER }; // Clone mock user
-    state.isAdmin = false;
-    router();
+    // 2. Supabase Auth
+    if (window.sb) {
+        const data = await window.sb.signIn(email, pass);
+        if (data && data.user) {
+            // Success - State update handled by router/session check or manual set here
+            state.user = {
+                ...MOCK_USER,
+                email: data.user.email,
+                username: data.user.email.split('@')[0]
+            };
+            state.isAdmin = false;
+            router();
+        }
+    } else {
+        alert("Supabase client not ready.");
+    }
 }
 
-function logout() {
+async function signup(email, pass) {
+    if (window.sb) {
+        const data = await window.sb.signUp(email, pass);
+        if (data && data.user) {
+            alert("Signup Successful! Please check your email or login.");
+            // Optionally auto-login or redirect to login
+            window.location.hash = '#/signin';
+        }
+    }
+}
+
+async function logout() {
+    if (window.sb) await window.sb.signOut();
     state.user = null;
+    state.isAdmin = false;
     window.location.hash = '#/';
 }
 
@@ -581,7 +629,7 @@ function renderSignUp(container) {
                     <p class="text-gray-400 mt-2">Join the coding revolution. <a href="#/signin" class="text-brand hover:underline">Sign In</a></p>
                 </div>
 
-                <form onsubmit="event.preventDefault(); login();" class="space-y-5">
+                <form onsubmit="event.preventDefault(); signup(this.querySelector('input[type=email]').value, this.querySelector('input[type=password]').value);" class="space-y-5">
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-gray-300">Username</label>
                         <input type="text" class="w-full bg-bg-surface border border-gray-700 rounded-lg px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors" placeholder="@pythonista">

@@ -7,6 +7,8 @@
     <meta name="description" content="Master Python through games, battles & challenges. Earn CodeCoins. 100% Free.">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -65,6 +67,7 @@
     <div id="app" class="min-h-screen flex flex-col">
         <!-- Content injected by js/codesphere.js -->
     </div>
+    <script src="js/supabaseClient.js"></script>
     <script src="js/codesphere.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
