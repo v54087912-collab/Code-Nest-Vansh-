@@ -67,8 +67,2791 @@
     <div id="app" class="min-h-screen flex flex-col">
         <!-- Content injected by js/codesphere.js -->
     </div>
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/codesphere.js"></script>
+    <script>
+// js/supabaseClient.js
+
+// Supabase Configuration
+const SUPABASE_URL = 'https://xjceggpabmlwurprierg.supabase.co';
+// Using the JWT part of the key provided.
+// If the full string is required, it can be swapped, but standard is JWT.
+// The provided key was: "sb_publishable_...,eyJ..."
+// We will use the second part (JWT) which is standard for the JS client.
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY2VnZ3BhYm1sd3VycHJpZXJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NzkwMjcsImV4cCI6MjA4NzM1NTAyN30.nkFv1ld5npPy_xWQIOal_hCsPGy1wg75dwMdEwi1184';
+
+// Initialize Supabase
+let supabase;
+
+if (window.supabase) {
+    try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase Client Initialized');
+    } catch (err) {
+        console.error('❌ Failed to initialize Supabase:', err);
+    }
+} else {
+    console.error('❌ Supabase SDK not found. Ensure the CDN script is loaded.');
+}
+
+// --- Auth Functions ---
+
+/**
+ * Sign up a new user
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{user, session, error}>}
+ */
+async function signUp(email, password) {
+    console.log('Supabase: Signing up...', email);
+    const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+    });
+
+    if (error) {
+        console.error('❌ Signup Error:', error.message);
+        alert('Signup Failed: ' + error.message);
+        return { error };
+    }
+
+    console.log('✅ Signup Successful:', data);
+    return data;
+}
+
+/**
+ * Sign in an existing user
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{user, session, error}>}
+ */
+async function signIn(email, password) {
+    console.log('Supabase: Signing in...', email);
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+    });
+
+    if (error) {
+        console.error('❌ Login Error:', error.message);
+        alert('Login Failed: ' + error.message);
+        return { error };
+    }
+
+    console.log('✅ Login Successful:', data);
+    return data;
+}
+
+/**
+ * Sign out the current user
+ */
+async function signOut() {
+    console.log('Supabase: Signing out...');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        console.error('❌ Logout Error:', error.message);
+        return { error };
+    }
+    console.log('✅ Logout Successful');
+    return { success: true };
+}
+
+/**
+ * Get the current active session
+ * @returns {Promise<{session, error}>}
+ */
+async function getSession() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+        console.error('❌ Session Error:', error.message);
+        return null;
+    }
+    return data.session;
+}
+
+/**
+ * Example: Fetch users from a 'users' table
+ * Note: This requires a 'users' table to exist and RLS policies to allow reading.
+ */
+async function getUsers() {
+    console.log('Supabase: Fetching users...');
+    const { data, error } = await supabase
+        .from('users')
+        .select('*');
+
+    if (error) {
+        console.error('❌ Fetch Users Error:', error.message);
+        return null;
+    }
+
+    console.log('✅ Users Data:', data);
+    return data;
+}
+
+// Expose functions globally for the SPA
+window.sb = {
+    client: supabase,
+    signUp,
+    signIn,
+    signOut,
+    getSession,
+    getUsers
+};
+</script>
+    <script>// js/codesphere.js
+
+/**
+ * CodeSphere - Single Page Application Logic
+ * Handles routing, state management, and view rendering.
+ */
+
+// --- Constants & Mock Data ---
+const MOCK_USER = {
+    name: 'Pythonista',
+    username: 'python_dev_1',
+    cc: 340,
+    xp: 2450,
+    streak: 12,
+    completedTopics: ['ch1-t1', 'ch1-t2'],
+    solvedChallenges: ['c1', 'c2'],
+    inventory: ['theme-dark-neon'],
+    battles: { w: 18, l: 9 }
+};
+
+const ROADMAP_DATA = [
+    {
+        id: 'level0',
+        title: '👶 Level 0: Python Foundations',
+        desc: '40% Theory, 60% Practice. Start here.',
+        totalCC: 100,
+        chapters: [
+            {
+                id: 'l0-ch1',
+                title: 'Introduction to Programming',
+                reward: 20,
+                topics: [
+                    { id: 'l0-t1', title: 'How Computers Think', reward: 5, readTime: '10 min' },
+                    { id: 'l0-t2', title: 'Why Python?', reward: 5, readTime: '5 min' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'beginner',
+        title: '🌱 Beginner Track',
+        desc: 'Core syntax and basic logic.',
+        totalCC: 130,
+        chapters: [
+            {
+                id: 'ch1',
+                title: 'Chapter 1: Python Basics',
+                reward: 30,
+                topics: [
+                    { id: 'ch1-t1', title: 'What is Python?', reward: 5, readTime: '5 min' },
+                    { id: 'ch1-t2', title: 'Installation & Setup', reward: 5, readTime: '10 min' },
+                    { id: 'ch1-t3', title: 'Variables & Data Types', reward: 5, readTime: '15 min' },
+                    { id: 'ch1-t4', title: 'Strings & Methods', reward: 5, readTime: '12 min' }
+                ]
+            },
+            {
+                id: 'ch2',
+                title: 'Chapter 2: Control Flow',
+                reward: 30,
+                topics: [
+                    { id: 'ch2-t1', title: 'If / Elif / Else', reward: 5, readTime: '10 min' },
+                    { id: 'ch2-t2', title: 'For Loops', reward: 5, readTime: '15 min' },
+                    { id: 'ch2-t3', title: 'While Loops', reward: 5, readTime: '12 min' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'intermediate',
+        title: '🔥 Intermediate Track',
+        desc: 'Data structures and functions.',
+        totalCC: 150,
+        chapters: [
+            {
+                id: 'ch3',
+                title: 'Data Structures',
+                reward: 40,
+                topics: [
+                    { id: 'ch3-t1', title: 'Lists & Tuples', reward: 10, readTime: '15 min' },
+                    { id: 'ch3-t2', title: 'Dictionaries & Sets', reward: 10, readTime: '15 min' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'advanced',
+        title: '🚀 Advanced Track',
+        desc: 'OOP, Decorators, Generators.',
+        totalCC: 200,
+        chapters: []
+    },
+    {
+        id: 'master',
+        title: '👑 Master Track',
+        desc: 'Concurrency, Metaclasses, Optimization.',
+        totalCC: 300,
+        chapters: []
+    },
+    {
+        id: 'specialist',
+        title: '🎓 Python Specialist',
+        desc: 'Choose your path: Data Science, Web, or AI.',
+        totalCC: 500,
+        chapters: [
+            {
+                id: 'spec-ds',
+                title: 'Data Science Library',
+                reward: 100,
+                topics: [
+                    { id: 'ds-pandas', title: 'Pandas', reward: 20, readTime: '30 min' },
+                    { id: 'ds-numpy', title: 'NumPy', reward: 20, readTime: '25 min' }
+                ]
+            },
+            {
+                id: 'spec-web',
+                title: 'Web Development Library',
+                reward: 100,
+                topics: [
+                    { id: 'web-flask', title: 'Flask', reward: 20, readTime: '30 min' },
+                    { id: 'web-django', title: 'Django', reward: 20, readTime: '40 min' }
+                ]
+            }
+        ]
+    }
+];
+
+const NOTES_DATA = [
+    { id: 'n1', title: 'Python Cheat Sheet (PDF)', type: 'pdf', size: '2.5 MB' },
+    { id: 'n2', title: 'Data Structures Mind Map', type: 'image', size: '1.2 MB' },
+    { id: 'n3', title: 'OOP Concepts Chart', type: 'image', size: '800 KB' },
+    { id: 'n4', title: '100 Python Interview Q&A', type: 'doc', size: '500 KB' }
+];
+
+const PRACTICE_QUESTIONS = [
+    { id: 'p1', level: 'level0', text: "Write a program to print 'Hello World'." },
+    { id: 'p2', level: 'beginner', text: "Create a variable 'x' equal to 5 and print it." },
+    { id: 'p3', level: 'intermediate', text: "Write a function that reverses a list." },
+    { id: 'p4', level: 'advanced', text: "Create a decorator that times a function's execution." },
+    { id: 'p5', level: 'master', text: "Implement a thread-safe singleton class." },
+    { id: 'p6', level: 'specialist', text: "Load a CSV file using Pandas and print the first 5 rows." }
+];
+
+const ADMIN_CREDENTIALS = {
+    email: 'vanshkumar1653@gmail.com',
+    pass: 'vansh1'
+};
+
+const ADMIN_DATA = {
+    totalUsers: 54321,
+    activeBattles: 128,
+    revenue: 12450, // simulated
+    reports: 3
+};
+
+const CHALLENGE_DATA = [
+    {
+        id: 'c1',
+        title: 'Sum of Two Numbers',
+        difficulty: 'Beginner',
+        reward: 10,
+        xp: 25,
+        solvedCount: 1240,
+        description: 'Write a function that takes two numbers and returns their sum.',
+        input: 'a = 5, b = 3',
+        output: '8',
+        starterCode: 'def sum_two(a, b):\n    # Write your code here\n    pass'
+    },
+    {
+        id: 'c2',
+        title: 'Reverse String',
+        difficulty: 'Beginner',
+        reward: 10,
+        xp: 25,
+        solvedCount: 980,
+        description: 'Write a function that reverses a given string.',
+        input: '"hello"',
+        output: '"olleh"',
+        starterCode: 'def reverse_string(s):\n    # Write your code here\n    return s[::-1]'
+    },
+    {
+        id: 'c3',
+        title: 'FizzBuzz',
+        difficulty: 'Intermediate',
+        reward: 20,
+        xp: 50,
+        solvedCount: 3400,
+        description: 'Print numbers 1 to n. If divisible by 3 print "Fizz", by 5 "Buzz", both "FizzBuzz".',
+        input: 'n = 15',
+        output: '1, 2, Fizz, 4, Buzz...',
+        starterCode: 'def fizzbuzz(n):\n    # Write your code here\n    pass'
+    }
+];
+
+const STORE_ITEMS = [
+    { id: 'theme-sakura', name: 'Sakura Theme', type: 'theme', price: 40, icon: '🌸', desc: 'Pink cherry blossom aesthetic' },
+    { id: 'theme-cyber', name: 'Cyberpunk Theme', type: 'theme', price: 60, icon: '🤖', desc: 'Neon blue and purple vibes' },
+    { id: 'frame-gold', name: 'Gold Frame', type: 'frame', price: 30, icon: '🖼️', desc: 'Shiny gold border for your avatar' },
+    { id: 'course-web', name: 'Python for Web', type: 'course', price: 100, icon: '🌐', desc: 'Master Flask and Django' },
+    { id: 'power-xp', name: '2x XP Boost', type: 'powerup', price: 30, icon: '⚡', desc: 'Double XP for 24 hours' },
+    { id: 'power-shield', name: 'Streak Shield', type: 'powerup', price: 20, icon: '🛡️', desc: 'Protect your streak for 1 day' }
+];
+
+const GAMES_DATA = {
+    beginner: [
+        { id: 'pet', title: 'Virtual Pet', icon: '🐶', desc: 'Care for a pet with Python commands.', reward: 10, route: '#/game/pet' },
+        { id: 'traffic', title: 'Traffic Light', icon: '🚦', desc: 'Control traffic using if-else logic.', reward: 10, route: '#/game/traffic' }
+    ],
+    intermediate: [
+        { id: 'blocks', title: 'Code Blocks', icon: '🧱', desc: 'Drag & Drop code to solve puzzles.', reward: 15, route: '#/game/blocks' },
+        { id: 'guess', title: 'Guess Output', icon: '❓', desc: 'Predict the output of Python code.', reward: 15, route: '#/game/guess' },
+        { id: 'fill', title: 'Fill Blanks', icon: '🧩', desc: 'Complete missing code keywords.', reward: 15, route: '#/game/fill' }
+    ],
+    hardcore: [
+        { id: 'type-race', title: 'Type Race', icon: '⌨️', desc: 'Race against time and bots.', reward: 20, route: '#/game/type-race' },
+        { id: 'bug-buster', title: 'Bug Buster', icon: '🐛', desc: 'Find and fix bugs in complex code.', reward: 20, route: '#/game/bug-buster' }
+    ]
+};
+
+// --- State Management ---
+const state = {
+    user: null, // null if logged out
+    currentTheme: 'dark',
+    activeGameTab: 'beginner',
+    isAdmin: false
+};
+
+// --- Router ---
+async function router() {
+    const hash = window.location.hash || '#/';
+    const path = hash.split('?')[0]; // simple path matching
+    const app = document.getElementById('app');
+
+    // Session Check (Restore State)
+    if (!state.user && window.sb) {
+        const session = await window.sb.getSession();
+        if (session) {
+            console.log('Restoring session for:', session.user.email);
+            // In a real app, fetch profile from DB. Here we check admin or use mock.
+            if (session.user.email === ADMIN_CREDENTIALS.email) {
+                state.user = { name: 'Admin Vansh', username: 'admin', cc: 99999, xp: 99999, streak: 999, completedTopics: [], solvedChallenges: [], inventory: [], battles: { w: 999, l: 0 } };
+                state.isAdmin = true;
+            } else {
+                // Restore Mock User State
+                state.user = {
+                    ...MOCK_USER,
+                    email: session.user.email,
+                    username: session.user.email.split('@')[0]
+                };
+                state.isAdmin = false;
+            }
+        }
+    }
+
+    console.log('Router navigating to:', path, 'User:', state.user ? state.user.username : 'guest');
+
+    // Clear previous view
+    app.innerHTML = '';
+    window.scrollTo(0, 0);
+
+    // Route Guards
+    if (['#/signin', '#/signup'].includes(path) && state.user) {
+        window.location.hash = '#/dashboard';
+        return;
+    }
+
+    // Routes
+    switch (path) {
+        case '#/':
+            state.user ? renderDashboard(app) : renderLanding(app);
+            break;
+        case '#/signin':
+            renderSignIn(app);
+            break;
+        case '#/signup':
+            renderSignUp(app);
+            break;
+        case '#/dashboard':
+            requireAuth(() => renderDashboard(app));
+            break;
+        case '#/roadmap':
+            requireAuth(() => renderRoadmap(app));
+            break;
+        case '#/challenges':
+            requireAuth(() => renderChallenges(app));
+            break;
+        case '#/battles':
+            requireAuth(() => renderBattles(app));
+            break;
+        case '#/games':
+            requireAuth(() => renderGames(app));
+            break;
+        case '#/game/type-race':
+            requireAuth(() => renderGameTypeRace(app));
+            break;
+        case '#/game/pet':
+            requireAuth(() => renderGamePet(app));
+            break;
+        case '#/game/traffic':
+            requireAuth(() => renderGameTraffic(app));
+            break;
+        case '#/game/blocks':
+            requireAuth(() => renderGameBlocks(app));
+            break;
+        case '#/game/guess':
+            requireAuth(() => renderGameQuiz(app, 'guess'));
+            break;
+        case '#/game/fill':
+            requireAuth(() => renderGameQuiz(app, 'fill'));
+            break;
+        case '#/game/bug-buster':
+            requireAuth(() => renderGameBugBuster(app));
+            break;
+        case '#/store':
+            requireAuth(() => renderStore(app));
+            break;
+        case '#/profile':
+            requireAuth(() => renderProfile(app));
+            break;
+        case '#/leaderboard':
+            requireAuth(() => renderLeaderboard(app));
+            break;
+        case '#/notes':
+            requireAuth(() => renderNotes(app));
+            break;
+        case '#/practice':
+            requireAuth(() => renderPractice(app));
+            break;
+        case '#/theory':
+            requireAuth(() => renderTheory(app));
+            break;
+        case '#/admin':
+            if (state.isAdmin) renderAdminDashboard(app);
+            else renderNotFound(app);
+            break;
+        case '#/logout':
+            logout();
+            break;
+        default:
+            // Handle dynamic routes like #/topic/:id
+            if (path.startsWith('#/topic/')) {
+                const topicId = path.split('/')[2];
+                requireAuth(() => renderTopic(app, topicId));
+            } else if (path.startsWith('#/challenge/')) {
+                const challengeId = path.split('/')[2];
+                requireAuth(() => renderSingleChallenge(app, challengeId));
+            } else {
+                renderNotFound(app);
+            }
+    }
+}
+
+// --- Auth Helpers ---
+function requireAuth(renderFn) {
+    if (state.user) {
+        renderFn();
+    } else {
+        window.location.hash = '#/signin';
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-2xl font-bold text-white transform transition-all duration-300 translate-y-10 opacity-0 z-50 flex items-center gap-2 ${type === 'error' ? 'bg-red-500' : 'bg-brand'}`;
+    toast.innerHTML = `<span>${type === 'error' ? '⚠️' : '✅'}</span> ${message}`;
+
+    document.body.appendChild(toast);
+
+    // Animate In
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-10', 'opacity-0');
+    });
+
+    // Animate Out
+    setTimeout(() => {
+        toast.classList.add('translate-y-10', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+async function login(email, pass) {
+    // 1. Check Hardcoded Admin (Backdoor for demo)
+    if (email === ADMIN_CREDENTIALS.email && pass === ADMIN_CREDENTIALS.pass) {
+        state.user = { name: 'Admin Vansh', username: 'admin', cc: 99999, xp: 99999, streak: 999, completedTopics: [], solvedChallenges: [], inventory: [], battles: { w: 999, l: 0 } };
+        state.isAdmin = true;
+        window.location.hash = '#/admin';
+        return;
+    }
+
+    // 2. Supabase Auth
+    if (window.sb) {
+        const data = await window.sb.signIn(email, pass);
+        if (data && data.user) {
+            // Success - State update handled by router/session check or manual set here
+            state.user = {
+                ...MOCK_USER,
+                email: data.user.email,
+                username: data.user.email.split('@')[0]
+            };
+            state.isAdmin = false;
+            showToast('Welcome back, ' + state.user.username + '!');
+            router();
+        }
+    } else {
+        showToast("Supabase client not ready.", 'error');
+    }
+}
+
+async function signup(email, pass) {
+    if (window.sb) {
+        const data = await window.sb.signUp(email, pass);
+        if (data && data.user) {
+            showToast("Signup Successful! Check your email.");
+            // Optionally auto-login or redirect to login
+            window.location.hash = '#/signin';
+        }
+    }
+}
+
+async function logout() {
+    if (window.sb) await window.sb.signOut();
+    state.user = null;
+    state.isAdmin = false;
+    window.location.hash = '#/';
+}
+
+// --- Render Functions (Phase 1) ---
+
+function renderLanding(container) {
+    container.innerHTML = `
+        <!-- Navbar -->
+        <nav class="flex items-center justify-between px-6 py-4 bg-bg-deep/80 backdrop-blur-md fixed w-full z-50 border-b border-white/10 shadow-lg shadow-black/20">
+            <div class="flex items-center gap-2">
+                <span class="text-3xl filter drop-shadow-lg">🐍</span>
+                <span class="font-display font-bold text-xl tracking-tight text-white drop-shadow">CodeSphere</span>
+            </div>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
+                <a href="#/" class="hover:text-brand transition-colors hover:scale-105 transform duration-200">Home</a>
+                <a href="#/roadmap" class="hover:text-brand transition-colors hover:scale-105 transform duration-200">Roadmap</a>
+                <a href="#/battles" class="hover:text-brand transition-colors hover:scale-105 transform duration-200">Battles</a>
+                <a href="#/practice" class="hover:text-brand transition-colors flex items-center gap-1 hover:scale-105 transform duration-200">Playground <span class="text-xs">↗</span></a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="#/signin" class="text-brand hover:text-white transition-colors font-medium">Sign In</a>
+                <a href="#/signup" class="bg-gradient-to-r from-brand to-emerald-500 hover:from-emerald-500 hover:to-brand text-white px-6 py-2.5 rounded-full font-bold transition-all transform hover:scale-105 shadow-xl shadow-brand/20 border border-white/10">Start Free →</a>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="pt-32 pb-20 px-6 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-bg-deep via-[#0d2a1e] to-bg-deep -z-20"></div>
+            <div class="absolute top-20 right-0 w-[500px] h-[500px] bg-brand/20 rounded-full blur-[100px] -z-10 animate-pulse-slow"></div>
+            <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gold/10 rounded-full blur-[100px] -z-10"></div>
+
+            <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8 relative z-10">
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 backdrop-blur border border-brand/30 text-xs font-bold text-brand shadow-lg shadow-brand/10 hover:bg-white/10 transition-colors cursor-default">
+                        <span class="animate-pulse w-2 h-2 rounded-full bg-brand"></span> 100% Free Python Learning
+                    </div>
+                    <h1 class="text-5xl md:text-7xl font-bold leading-tight font-display">
+                        Learn Python. <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand to-teal-400">Battle Coders.</span> <br>
+                        Earn Rewards.
+                    </h1>
+                    <p class="text-lg text-gray-400 max-w-lg leading-relaxed">
+                        Master Python through games, battles & challenges.
+                        Earn <span class="text-gold font-bold">CodeCoins</span>. Buy courses.
+                        Join 50,000+ learners today.
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <a href="#/signup" class="bg-brand hover:bg-brand/90 text-white text-lg px-8 py-3 rounded-lg font-bold transition-all shadow-xl shadow-brand/20 flex items-center gap-2">
+                            Start Learning Free <span class="text-xl">→</span>
+                        </a>
+                        <a href="#/battles" class="bg-bg-surface hover:bg-white/10 text-white text-lg px-8 py-3 rounded-lg font-bold border border-white/10 transition-all flex items-center gap-2">
+                            ⚔️ Join a Battle
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-6 pt-4 text-sm text-gray-500 font-mono">
+                        <div class="flex items-center gap-2"><span class="text-brand">✓</span> 50K Learners</div>
+                        <div class="flex items-center gap-2"><span class="text-brand">✓</span> 300 Challenges</div>
+                        <div class="flex items-center gap-2"><span class="text-gold">✓</span> 1M CC Distributed</div>
+                    </div>
+                </div>
+
+                <!-- Hero Visual -->
+                <div class="relative">
+                    <div class="bg-bg-card border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-sm rotate-2 hover:rotate-0 transition-transform duration-500">
+                        <div class="flex items-center gap-2 mb-4 border-b border-white/5 pb-4">
+                            <div class="flex gap-1.5">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                            </div>
+                            <div class="ml-auto text-xs text-gray-500 font-mono">main.py</div>
+                        </div>
+                        <pre class="font-mono text-sm text-gray-300 overflow-x-auto">
+<span class="text-purple-400">def</span> <span class="text-blue-400">battle_start</span>(player):
+    <span class="text-gray-500"># Start your coding journey</span>
+    xp = <span class="text-gold">0</span>
+    streak = <span class="text-gold">True</span>
+
+    <span class="text-purple-400">while</span> streak:
+        xp += <span class="text-gold">100</span>
+        <span class="text-blue-400">print</span>(<span class="text-green-400">"Level Up! 🚀"</span>)
+
+<span class="text-blue-400">battle_start</span>(<span class="text-green-400">"You"</span>)</pre>
+
+                        <div class="absolute -bottom-6 -right-6 bg-bg-surface border border-white/10 p-4 rounded-xl shadow-xl flex items-center gap-3 animate-bounce">
+                            <div class="bg-gold/20 p-2 rounded-lg text-2xl">🏆</div>
+                            <div>
+                                <div class="text-xs text-gray-400 uppercase font-bold">Winner</div>
+                                <div class="font-bold text-gold">+50 CodeCoins</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="py-20 bg-bg-surface/30">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-4">Everything Free. Everything Awesome. 🐍</h2>
+                    <p class="text-gray-400">We gamified Python learning so you never get bored.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Card 1 -->
+                    <div class="bg-bg-card p-6 rounded-2xl border border-white/5 hover:border-brand/50 transition-colors group">
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🗺️</div>
+                        <h3 class="text-xl font-bold mb-2">Full Python Roadmap</h3>
+                        <p class="text-gray-400 text-sm">From Hello World to Machine Learning. 120+ topics, zero cost.</p>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="bg-bg-card p-6 rounded-2xl border border-white/5 hover:border-brand/50 transition-colors group">
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">⚔️</div>
+                        <h3 class="text-xl font-bold mb-2">Code Battles</h3>
+                        <p class="text-gray-400 text-sm">Fight other coders in real-time. Win CodeCoins. Climb the ranks.</p>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="bg-bg-card p-6 rounded-2xl border border-white/5 hover:border-brand/50 transition-colors group">
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🪙</div>
+                        <h3 class="text-xl font-bold mb-2">Token Economy</h3>
+                        <p class="text-gray-400 text-sm">Earn CC by learning. Spend it on courses, themes, and power-ups.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-bg-deep border-t border-white/5 py-12 px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2025 CodeSphere. Built with 🐍 and ☕</p>
+        </footer>
+    `;
+}
+
+function renderSignIn(container) {
+    container.innerHTML = `
+        <div class="min-h-screen flex">
+            <!-- Left Side (Visual) -->
+            <div class="hidden lg:flex w-1/2 bg-bg-card relative items-center justify-center overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-brand/10 to-transparent"></div>
+                <div class="relative z-10 text-center space-y-6 max-w-md p-8">
+                    <div class="text-6xl mb-4">🐍</div>
+                    <h2 class="text-4xl font-bold text-white">Welcome back,<br>Pythonista!</h2>
+                    <p class="text-xl text-gray-300">Your streak is waiting. Don't break the chain.</p>
+
+                    <div class="bg-bg-deep/50 backdrop-blur border border-white/10 rounded-xl p-4 flex items-center gap-4 text-left mt-8">
+                        <div class="bg-gold/20 p-3 rounded-lg text-2xl">🎁</div>
+                        <div>
+                            <div class="text-xs text-gray-400 uppercase font-bold">Daily Reward</div>
+                            <div class="font-bold text-white">Day 8: <span class="text-gold">+15 CC Available</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-bg-deep/50 backdrop-blur border border-white/10 rounded-xl p-4 flex items-center gap-4 text-left">
+                        <div class="bg-gray-700/50 p-3 rounded-lg text-2xl">⚔️</div>
+                        <div>
+                            <div class="text-xs text-gray-400 uppercase font-bold">Battles</div>
+                            <div class="font-bold text-white">3 challenges pending</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side (Form) -->
+            <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-bg-deep">
+                <div class="w-full max-w-md space-y-8">
+                    <div>
+                        <h2 class="text-3xl font-bold">Sign In</h2>
+                        <p class="text-gray-400 mt-2">Don't have an account? <a href="#/signup" class="text-brand hover:underline">Start Free</a></p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <button class="w-full bg-white text-black font-bold py-3 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
+                            <span class="text-xl">🐙</span> Continue with GitHub
+                        </button>
+                        <button class="w-full bg-[#4285F4] text-white font-bold py-3 rounded-lg flex items-center justify-center gap-3 hover:bg-[#3367D6] transition-colors">
+                            <span class="text-xl">G</span> Continue with Google
+                        </button>
+                    </div>
+
+                    <div class="relative flex items-center py-2">
+                        <div class="flex-grow border-t border-gray-700"></div>
+                        <span class="flex-shrink-0 mx-4 text-gray-500 text-sm">or use email</span>
+                        <div class="flex-grow border-t border-gray-700"></div>
+                    </div>
+
+                    <form onsubmit="event.preventDefault(); login(this.querySelector('input[type=email]').value, this.querySelector('input[type=password]').value);" class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300">Email address</label>
+                            <input type="email" class="w-full bg-bg-surface border border-gray-700 rounded-lg px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors" placeholder="python@example.com">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300">Password</label>
+                            <input type="password" class="w-full bg-bg-surface border border-gray-700 rounded-lg px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors" placeholder="••••••••">
+                        </div>
+
+                        <div class="flex items-center justify-between text-sm">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded border-gray-700 bg-bg-surface text-brand focus:ring-brand">
+                                <span class="text-gray-400">Remember me</span>
+                            </label>
+                            <a href="#" class="text-brand hover:underline">Forgot password?</a>
+                        </div>
+
+                        <button type="submit" class="w-full bg-brand hover:bg-brand/90 text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-brand/20">
+                            Sign In →
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderSignUp(container) {
+    // Reusing Sign In style for simplicity in this phase, just different title
+    container.innerHTML = `
+         <div class="min-h-screen flex items-center justify-center p-8 bg-bg-deep relative">
+            <div class="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+                <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-brand/10 rounded-full blur-3xl"></div>
+                <div class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-gold/5 rounded-full blur-3xl"></div>
+            </div>
+
+            <div class="w-full max-w-md space-y-8 relative z-10 bg-bg-card p-8 rounded-2xl border border-white/5 shadow-2xl">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold">Create Account</h2>
+                    <p class="text-gray-400 mt-2">Join the coding revolution. <a href="#/signin" class="text-brand hover:underline">Sign In</a></p>
+                </div>
+
+                <form onsubmit="event.preventDefault(); signup(this.querySelector('input[type=email]').value, this.querySelector('input[type=password]').value);" class="space-y-5">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-300">Username</label>
+                        <input type="text" class="w-full bg-bg-surface border border-gray-700 rounded-lg px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors" placeholder="@pythonista">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-300">Email address</label>
+                        <input type="email" class="w-full bg-bg-surface border border-gray-700 rounded-lg px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors" placeholder="hello@codesphere.io">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-300">Password</label>
+                        <input type="password" class="w-full bg-bg-surface border border-gray-700 rounded-lg px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors" placeholder="Create a strong password">
+                    </div>
+
+                    <button type="submit" class="w-full bg-brand hover:bg-brand/90 text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-brand/20 mt-4">
+                        🚀 Start Learning Free
+                    </button>
+
+                    <p class="text-xs text-center text-gray-500 mt-4">
+                        By joining, you agree to our Terms and Privacy Policy.
+                    </p>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+function renderDashboard(container) {
+    const user = state.user;
+    container.innerHTML = `
+        <!-- Dashboard Layout -->
+        <div class="min-h-screen bg-bg-deep pb-20">
+            <!-- Top Header -->
+            <header class="bg-bg-card border-b border-white/5 sticky top-0 z-30">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🐍</span>
+                        <span class="font-bold text-lg hidden md:block">CodeSphere</span>
+                    </div>
+
+                    <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-400">
+                        <a href="#/dashboard" class="text-white">Home</a>
+                        <a href="#/roadmap" class="hover:text-brand transition-colors">Roadmap</a>
+                        <a href="#/notes" class="hover:text-brand transition-colors">Notes</a>
+                        <a href="#/theory" class="hover:text-brand transition-colors">Theory</a>
+                        <a href="#/practice" class="hover:text-brand transition-colors">Practice</a>
+                        <a href="#/battles" class="hover:text-brand transition-colors">Battles</a>
+                        <a href="#/games" class="hover:text-brand transition-colors">Games</a>
+                        <a href="app.html" class="hover:text-brand transition-colors flex items-center gap-1">Playground <span class="text-xs">↗</span></a>
+                    </nav>
+
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-1 bg-bg-deep px-3 py-1 rounded-full border border-white/5">
+                            <span class="text-lg">🔥</span>
+                            <span class="font-bold text-white">${user.streak} Day Streak</span>
+                        </div>
+                         <div class="flex items-center gap-1 bg-bg-deep px-3 py-1 rounded-full border border-gold/20">
+                            <span class="text-lg">🪙</span>
+                            <span class="font-bold text-gold">${user.cc} CC</span>
+                        </div>
+                        <button onclick="logout()" class="text-sm text-gray-500 hover:text-white ml-2">Sign Out</button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+                <!-- Welcome & Daily Reward -->
+                <div class="space-y-2">
+                    <h1 class="text-3xl font-bold font-display">Good morning, ${user.name} 👋</h1>
+                    <p class="text-gray-400">Ready to code today?</p>
+                </div>
+
+                <!-- Daily Reward Banner -->
+                <div class="bg-gradient-to-r from-gold/10 to-transparent border border-gold/20 rounded-xl p-6 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-gold/20 p-4 rounded-xl text-3xl animate-bounce">🎁</div>
+                        <div>
+                            <h3 class="font-bold text-gold text-lg">Daily Reward Ready!</h3>
+                            <p class="text-sm text-gray-300">Claim your +10 CC and keep your streak alive.</p>
+                        </div>
+                    </div>
+                    <button class="bg-gold hover:bg-yellow-400 text-black font-bold px-6 py-2 rounded-lg shadow-lg shadow-gold/20 transition-all transform hover:scale-105">
+                        Claim Reward →
+                    </button>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-gold text-2xl mb-1">⚡</div>
+                        <div class="text-2xl font-bold">${user.xp}</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">XP Earned</div>
+                    </div>
+                    <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-gold text-2xl mb-1">🪙</div>
+                        <div class="text-2xl font-bold">${user.cc}</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">Balance</div>
+                    </div>
+                    <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-orange-500 text-2xl mb-1">🔥</div>
+                        <div class="text-2xl font-bold">${user.streak}</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">Day Streak</div>
+                    </div>
+                     <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-brand text-2xl mb-1">⚔️</div>
+                        <div class="text-2xl font-bold">32</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">Solved</div>
+                    </div>
+                </div>
+
+                <!-- Main Content Grid -->
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Left Col (Learning) -->
+                    <div class="md:col-span-2 space-y-6">
+                        <!-- Daily Challenge -->
+                        <div class="bg-bg-card rounded-2xl border border-white/5 overflow-hidden">
+                            <div class="bg-bg-surface px-6 py-3 border-b border-white/5 flex justify-between items-center">
+                                <span class="text-xs font-bold text-brand uppercase tracking-wider bg-brand/10 px-2 py-1 rounded">Daily Challenge</span>
+                                <div class="text-right">
+                                    <span class="text-gold font-bold">+25 CC</span>
+                                    <span class="text-xs text-gray-500 ml-2">+75 XP</span>
+                                </div>
+                            </div>
+                            <div class="p-6">
+                                <h3 class="text-xl font-bold mb-2">List Comprehension Master</h3>
+                                <p class="text-gray-400 text-sm mb-6">Convert this loop into a single line list comprehension. Solve it under 2 minutes for bonus XP.</p>
+                                <a href="#/challenges" class="inline-block bg-bg-surface hover:bg-brand hover:text-white border border-white/10 text-white font-bold px-6 py-2 rounded-lg transition-all">
+                                    Solve Now →
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Continue Learning -->
+                        <div class="bg-bg-card rounded-2xl border border-white/5 p-6">
+                            <h3 class="font-bold text-lg mb-4">Continue Learning</h3>
+                            <div class="bg-bg-deep rounded-xl p-4 flex items-center gap-4">
+                                <div class="w-12 h-12 bg-brand/20 rounded-lg flex items-center justify-center text-brand text-2xl">🔄</div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-1">
+                                        <h4 class="font-bold">Strings & Methods</h4>
+                                        <span class="text-xs text-gray-500">Topic 4/12</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-brand h-full w-1/3"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <a href="#/roadmap" class="text-brand text-sm font-bold hover:underline">Continue Chapter 1 →</a>
+                            </div>
+                        </div>
+
+                        <!-- Quick Games -->
+                        <div class="space-y-4">
+                            <h3 class="font-bold text-lg">Quick Games</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <a href="#/games" class="bg-bg-card hover:bg-bg-surface p-4 rounded-xl border border-white/5 transition-colors group">
+                                    <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">⌨️</div>
+                                    <div class="font-bold text-sm">Type Race</div>
+                                    <div class="text-xs text-gold">+20 CC Win</div>
+                                </a>
+                                <a href="#/games" class="bg-bg-card hover:bg-bg-surface p-4 rounded-xl border border-white/5 transition-colors group">
+                                    <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🐛</div>
+                                    <div class="font-bold text-sm">Bug Buster</div>
+                                    <div class="text-xs text-gold">+10 CC</div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Col (Sidebar) -->
+                    <div class="space-y-6">
+                        <!-- Wallet Widget -->
+                        <div class="bg-bg-card rounded-2xl border border-white/5 p-6 text-center">
+                            <div class="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Total Balance</div>
+                            <div class="flex items-center justify-center gap-2 mb-6">
+                                <span class="text-3xl">🪙</span>
+                                <span class="text-4xl font-bold text-white">${user.cc}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                <a href="#/battles" class="bg-bg-deep hover:bg-bg-surface py-2 rounded-lg text-xs font-bold text-gray-300 border border-white/5">⚔️ Battle</a>
+                                <a href="#/ads" class="bg-bg-deep hover:bg-bg-surface py-2 rounded-lg text-xs font-bold text-gray-300 border border-white/5">📺 Watch Ad</a>
+                            </div>
+                            <a href="#/store" class="text-gold text-sm font-bold hover:underline">Visit Store →</a>
+                        </div>
+
+                        <!-- Battle Invite -->
+                        <div class="bg-bg-card rounded-2xl border border-white/5 p-4 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-2 h-full bg-red-500"></div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                <span class="text-xs font-bold text-white">Battle Invite</span>
+                            </div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center font-bold">PS</div>
+                                <div>
+                                    <div class="font-bold text-sm">Priya S.</div>
+                                    <div class="text-xs text-gray-500">Intermediate | 500 CC</div>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-brand text-white text-xs font-bold py-2 rounded hover:bg-green-600">Accept ⚔️</button>
+                                <button class="flex-1 bg-gray-700 text-white text-xs font-bold py-2 rounded hover:bg-gray-600">Decline</button>
+                            </div>
+                        </div>
+
+                        <!-- Ads / Earn -->
+                        <div class="bg-bg-surface/50 rounded-2xl border border-white/5 p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-blue-400">📺</span>
+                                <span class="font-bold text-sm">Earn Free CC</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-3">
+                                <span>Daily Limit</span>
+                                <span>2/3 Watched</span>
+                            </div>
+                            <button class="w-full bg-[#1da1f2]/20 hover:bg-[#1da1f2]/30 text-[#1da1f2] border border-[#1da1f2]/50 font-bold py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+                                ▶ Watch Ad (+5 CC)
+                            </button>
+                        </div>
+
+                        <!-- Leaderboard Mini -->
+                        <div class="bg-bg-card rounded-2xl border border-white/5 p-6">
+                            <h3 class="font-bold text-sm text-gold mb-4">🏆 Top Players</h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gold font-bold w-4">1</span>
+                                        <div class="w-6 h-6 rounded-full bg-gray-600"></div>
+                                        <span>AlexCode</span>
+                                    </div>
+                                    <span class="text-gold font-mono">820 CC</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-400 font-bold w-4">2</span>
+                                        <div class="w-6 h-6 rounded-full bg-gray-600"></div>
+                                        <span>SarahPy</span>
+                                    </div>
+                                    <span class="text-gold font-mono">540 CC</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-orange-700 font-bold w-4">3</span>
+                                        <div class="w-6 h-6 rounded-full bg-gray-600"></div>
+                                        <span>DevMike</span>
+                                    </div>
+                                    <span class="text-gold font-mono">380 CC</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-white/5 text-center">
+                                <span class="text-xs text-gray-500">You are ranked #47</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Mobile Tab Bar (Bottom) -->
+            <div class="md:hidden fixed bottom-0 w-full bg-bg-card border-t border-white/5 flex justify-around py-3 pb-safe z-40">
+                <a href="#/dashboard" class="flex flex-col items-center gap-1 text-brand">
+                    <span class="text-xl">🏠</span>
+                    <span class="text-[10px]">Home</span>
+                </a>
+                <a href="#/roadmap" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                    <span class="text-xl">🗺️</span>
+                    <span class="text-[10px]">Learn</span>
+                </a>
+                <a href="#/battles" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                    <span class="text-xl">⚔️</span>
+                    <span class="text-[10px]">Battle</span>
+                </a>
+                 <a href="app.html" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                    <span class="text-xl">🐍</span>
+                    <span class="text-[10px]">Code</span>
+                </a>
+                <a href="#/profile" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                    <span class="text-xl">👤</span>
+                    <span class="text-[10px]">Me</span>
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+// --- Implementation of Views ---
+
+function renderRoadmap(container) {
+    const user = state.user;
+
+    // Calculate total progress
+    let totalTopics = 0;
+    let completedTopics = user.completedTopics.length;
+    ROADMAP_DATA.forEach(track => {
+        track.chapters.forEach(ch => {
+            totalTopics += ch.topics.length;
+        });
+    });
+    const progressPercent = Math.round((completedTopics / totalTopics) * 100) || 0;
+
+    let tracksHtml = ROADMAP_DATA.map(track => {
+        let chaptersHtml = track.chapters.map(chapter => {
+            let topicsHtml = chapter.topics.map(topic => {
+                const isCompleted = user.completedTopics.includes(topic.id);
+                const statusIcon = isCompleted ? '✅' : '🔒';
+                const statusClass = isCompleted ? 'text-brand' : 'text-gray-500';
+                const link = isCompleted ? `#/topic/${topic.id}` : `#/topic/${topic.id}`; // Allow viewing even if not completed for now
+
+                return `
+                    <a href="${link}" class="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <span class="${statusClass} text-lg">${statusIcon}</span>
+                            <span class="text-sm font-medium text-gray-300 group-hover:text-white">${topic.title}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs text-gray-500">${topic.readTime}</span>
+                            ${!isCompleted ? `<span class="text-xs text-gold border border-gold/20 px-2 py-0.5 rounded">+${topic.reward} CC</span>` : ''}
+                        </div>
+                    </a>
+                `;
+            }).join('');
+
+            return `
+                <div class="mb-8 relative pl-8 border-l border-white/10 last:border-0">
+                    <div class="absolute -left-3 top-0 w-6 h-6 rounded-full bg-bg-deep border border-brand flex items-center justify-center text-xs">📚</div>
+                    <h3 class="text-xl font-bold mb-1">${chapter.title}</h3>
+                    <p class="text-xs text-gray-500 mb-4 uppercase tracking-wider">Chapter Reward: +${chapter.reward} CC</p>
+                    <div class="bg-bg-card border border-white/5 rounded-xl overflow-hidden">
+                        ${topicsHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-white">${track.title}</h2>
+                    <span class="text-gold font-mono text-sm">Total: ${track.totalCC} CC</span>
+                </div>
+                ${chaptersHtml}
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-2 block">← Back to Dashboard</a>
+                        <h1 class="text-3xl font-bold font-display">Python Roadmap</h1>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-brand">${progressPercent}%</div>
+                        <div class="text-xs text-gray-500 uppercase">Complete</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-bg-surface h-3 rounded-full mb-12 overflow-hidden">
+                    <div class="bg-brand h-full transition-all duration-1000" style="width: ${progressPercent}%"></div>
+                </div>
+
+                ${tracksHtml}
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function renderTopic(container, topicId) {
+    const user = state.user;
+
+    // Find topic data
+    let topicData = null;
+    let chapterTitle = '';
+
+    for (const track of ROADMAP_DATA) {
+        for (const chapter of track.chapters) {
+            const found = chapter.topics.find(t => t.id === topicId);
+            if (found) {
+                topicData = found;
+                chapterTitle = chapter.title;
+                break;
+            }
+        }
+        if (topicData) break;
+    }
+
+    if (!topicData) {
+        renderNotFound(container);
+        return;
+    }
+
+    const isCompleted = user.completedTopics.includes(topicId);
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+             <div class="max-w-3xl mx-auto">
+                <!-- Header -->
+                <div class="mb-8 border-b border-white/5 pb-8">
+                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                        <a href="#/roadmap" class="hover:text-white">Roadmap</a>
+                        <span>/</span>
+                        <span>${chapterTitle}</span>
+                    </div>
+                    <h1 class="text-3xl md:text-4xl font-bold font-display mb-4">${topicData.title}</h1>
+                    <div class="flex items-center gap-4">
+                        <span class="flex items-center gap-1 text-sm text-gray-400">
+                            <span>⏱️</span> ${topicData.readTime}
+                        </span>
+                        ${!isCompleted ? `
+                            <span class="flex items-center gap-1 text-sm text-gold bg-gold/10 px-3 py-1 rounded-full border border-gold/20">
+                                <span>🪙</span> Earn +${topicData.reward} CC
+                            </span>
+                        ` : `
+                            <span class="flex items-center gap-1 text-sm text-brand bg-brand/10 px-3 py-1 rounded-full border border-brand/20">
+                                <span>✅</span> Completed
+                            </span>
+                        `}
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="prose prose-invert max-w-none mb-12">
+                    <p class="text-lg text-gray-300 leading-relaxed">
+                        In this lesson, we will explore the core concepts of <strong>${topicData.title}</strong>.
+                        Python makes this easy with its readable syntax.
+                    </p>
+
+                    <div class="bg-bg-card border-l-4 border-brand p-4 my-6 rounded-r-lg">
+                        <h3 class="text-brand font-bold mb-2">Key Concept</h3>
+                        <p class="text-gray-400">This is a placeholder for the actual educational content. Imagine a rich explanation here about variables, loops, or functions.</p>
+                    </div>
+
+                    <h3 class="text-xl font-bold mt-8 mb-4">Example Code</h3>
+                    <div class="bg-[#1e1e1e] p-4 rounded-lg border border-white/5 font-mono text-sm overflow-x-auto">
+                        <pre><span class="text-purple-400">def</span> <span class="text-blue-400">example_function</span>():
+    <span class="text-gray-500"># This is a sample code block</span>
+    <span class="text-blue-400">print</span>(<span class="text-green-400">"Hello from ${topicData.title}!"</span>)
+
+<span class="text-blue-400">example_function</span>()</pre>
+                    </div>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="flex items-center justify-between border-t border-white/5 pt-8">
+                    <a href="#/roadmap" class="text-gray-400 hover:text-white font-medium">← Back to Roadmap</a>
+
+                    <button
+                        onclick="completeTopic('${topicId}', ${topicData.reward})"
+                        ${isCompleted ? 'disabled' : ''}
+                        class="${isCompleted ? 'bg-gray-700 cursor-not-allowed opacity-50' : 'bg-brand hover:bg-brand/90 shadow-lg shadow-brand/20'} text-white font-bold px-8 py-3 rounded-lg transition-all transform active:scale-95 flex items-center gap-2"
+                    >
+                        ${isCompleted ? '✅ Completed' : `Mark Complete & Earn +${topicData.reward} CC`}
+                    </button>
+                </div>
+             </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function completeTopic(topicId, reward) {
+    if (state.user.completedTopics.includes(topicId)) return;
+
+    // Update State
+    state.user.completedTopics.push(topicId);
+    state.user.cc += reward;
+    state.user.xp += 50; // Fixed XP for now
+
+    // Re-render
+    const app = document.getElementById('app');
+    renderTopic(app, topicId);
+
+    // Trigger Global Coin Animation (Simple Alert for now or fancy DOM append)
+    // In a real app, we'd append a floating element
+}
+
+function renderMobileNav() {
+    return `
+        <div class="md:hidden fixed bottom-0 w-full bg-bg-card border-t border-white/5 flex justify-around py-3 pb-safe z-40">
+            <a href="#/dashboard" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                <span class="text-xl">🏠</span>
+                <span class="text-[10px]">Home</span>
+            </a>
+            <a href="#/theory" class="flex flex-col items-center gap-1 text-brand">
+                <span class="text-xl">📚</span>
+                <span class="text-[10px]">Learn</span>
+            </a>
+            <a href="#/practice" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                <span class="text-xl">💻</span>
+                <span class="text-[10px]">Practice</span>
+            </a>
+            <a href="#/games" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                <span class="text-xl">🎮</span>
+                <span class="text-[10px]">Play</span>
+            </a>
+            <a href="#/profile" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                <span class="text-xl">👤</span>
+                <span class="text-[10px]">Me</span>
+            </a>
+        </div>
+    `;
+}
+
+function renderChallenges(container) {
+    const user = state.user;
+
+    const challengesHtml = CHALLENGE_DATA.map(c => {
+        const isSolved = user.solvedChallenges.includes(c.id);
+        const difficultyColor = c.difficulty === 'Beginner' ? 'text-green-400' : (c.difficulty === 'Intermediate' ? 'text-yellow-400' : 'text-red-400');
+
+        return `
+            <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group relative overflow-hidden">
+                ${isSolved ? '<div class="absolute top-0 right-0 bg-brand text-white text-xs font-bold px-2 py-1 rounded-bl-lg">✅ Solved</div>' : ''}
+
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-bold ${difficultyColor} uppercase tracking-wider mb-1 block">${c.difficulty}</span>
+                        <h3 class="text-xl font-bold group-hover:text-brand transition-colors">${c.title}</h3>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-gold text-sm">+${c.reward} CC</div>
+                        <div class="text-xs text-gray-500">+${c.xp} XP</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 text-sm text-gray-400 mb-6">
+                    <span class="flex items-center gap-1">👥 ${c.solvedCount} Solved</span>
+                    <span class="flex items-center gap-1">🏷️ Algorithms</span>
+                </div>
+
+                <a href="#/challenge/${c.id}" class="block w-full text-center bg-bg-surface hover:bg-white/10 border border-white/10 text-white font-bold py-2 rounded-lg transition-colors">
+                    ${isSolved ? 'Solve Again' : 'Solve Challenge →'}
+                </a>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-2 block">← Back to Dashboard</a>
+                        <h1 class="text-3xl font-bold font-display">Python Challenges</h1>
+                    </div>
+
+                    <div class="flex gap-2">
+                         <div class="bg-bg-card border border-white/5 px-4 py-2 rounded-lg text-sm text-gray-300">
+                            Solved: <span class="text-brand font-bold">${user.solvedChallenges.length}</span>/${CHALLENGE_DATA.length}
+                         </div>
+                    </div>
+                </div>
+
+                <!-- Filters (Mock) -->
+                <div class="flex overflow-x-auto gap-2 mb-8 pb-2 scrollbar-hide">
+                    <button class="bg-brand text-white px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap">All</button>
+                    <button class="bg-bg-card border border-white/5 text-gray-300 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap hover:bg-bg-surface">Beginner</button>
+                    <button class="bg-bg-card border border-white/5 text-gray-300 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap hover:bg-bg-surface">Intermediate</button>
+                    <button class="bg-bg-card border border-white/5 text-gray-300 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap hover:bg-bg-surface">Advanced</button>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${challengesHtml}
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function renderSingleChallenge(container, id) {
+    const challenge = CHALLENGE_DATA.find(c => c.id === id);
+    if (!challenge) {
+        renderNotFound(container);
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="h-screen flex flex-col bg-bg-deep overflow-hidden">
+            <!-- Header -->
+            <header class="bg-bg-card border-b border-white/5 h-14 flex items-center px-4 justify-between shrink-0">
+                <div class="flex items-center gap-4">
+                    <a href="#/challenges" class="text-gray-400 hover:text-white">← Back</a>
+                    <h1 class="font-bold text-white truncate">${challenge.title}</h1>
+                    <span class="text-xs font-bold text-gold border border-gold/20 px-2 py-0.5 rounded">+${challenge.reward} CC</span>
+                </div>
+                <button onclick="runTests('${id}')" class="bg-brand hover:bg-green-500 text-white text-sm font-bold px-4 py-1.5 rounded flex items-center gap-2">
+                    <span>▶</span> Run Code
+                </button>
+            </header>
+
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Left Panel: Problem -->
+                <div class="w-1/2 md:w-5/12 border-r border-white/5 overflow-y-auto p-6">
+                    <div class="prose prose-invert prose-sm max-w-none">
+                        <h2 class="text-xl font-bold mb-4">Problem Description</h2>
+                        <p>${challenge.description}</p>
+
+                        <div class="my-6">
+                            <h3 class="text-sm font-bold uppercase text-gray-500 mb-2">Example Input</h3>
+                            <code class="block bg-bg-surface p-3 rounded-lg border border-white/5 font-mono text-blue-300">${challenge.input}</code>
+                        </div>
+
+                        <div class="my-6">
+                            <h3 class="text-sm font-bold uppercase text-gray-500 mb-2">Expected Output</h3>
+                            <code class="block bg-bg-surface p-3 rounded-lg border border-white/5 font-mono text-green-300">${challenge.output}</code>
+                        </div>
+
+                        <div class="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg mt-8">
+                            <h3 class="text-yellow-500 font-bold mb-1 text-sm">💡 Hint</h3>
+                            <p class="text-xs text-gray-400">Need help? Reveal a hint for 5 CC.</p>
+                            <button class="mt-2 text-xs font-bold text-yellow-500 hover:underline">Reveal Hint (-5 CC)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Editor -->
+                <div class="w-1/2 md:w-7/12 flex flex-col bg-[#1e1e1e]">
+                    <div class="flex-1 relative">
+                        <textarea id="challenge-editor" class="absolute inset-0 bg-transparent text-gray-300 p-4 font-mono resize-none outline-none leading-relaxed text-sm" spellcheck="false">${challenge.starterCode}</textarea>
+                    </div>
+
+                    <!-- Console/Tests Output -->
+                    <div id="test-console" class="h-1/3 bg-[#252526] border-t border-black p-4 font-mono text-sm overflow-y-auto hidden">
+                        <div class="text-gray-500 mb-2">Running tests...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function runTests(id) {
+    const consoleDiv = document.getElementById('test-console');
+    consoleDiv.classList.remove('hidden');
+    consoleDiv.innerHTML = '<div class="text-gray-400">🚀 Running tests...</div>';
+
+    // Mock Execution
+    setTimeout(() => {
+        const success = Math.random() > 0.3; // 70% chance of success for mock
+
+        if (success) {
+            consoleDiv.innerHTML += `
+                <div class="text-green-400 mt-2">✅ Test Case 1 Passed</div>
+                <div class="text-green-400">✅ Test Case 2 Passed</div>
+                <div class="text-green-400">✅ Test Case 3 Passed</div>
+                <div class="text-brand font-bold mt-4">🎉 Challenge Solved!</div>
+                <button onclick="submitChallenge('${id}')" class="mt-2 bg-brand text-white px-4 py-1 rounded text-xs font-bold">Claim Reward</button>
+            `;
+        } else {
+            consoleDiv.innerHTML += `
+                <div class="text-green-400 mt-2">✅ Test Case 1 Passed</div>
+                <div class="text-red-400">❌ Test Case 2 Failed</div>
+                <div class="text-gray-400 text-xs ml-4">Expected: 8, Got: 7</div>
+                <div class="text-red-400 font-bold mt-4">⚠️ Solution Incorrect. Try again.</div>
+            `;
+        }
+    }, 1000);
+}
+
+function submitChallenge(id) {
+    if (!state.user.solvedChallenges.includes(id)) {
+        const challenge = CHALLENGE_DATA.find(c => c.id === id);
+        state.user.solvedChallenges.push(id);
+        state.user.cc += challenge.reward;
+        state.user.xp += challenge.xp;
+
+        // Redirect to challenges list or show fancy modal
+        alert(`Congratulations! You earned +${challenge.reward} CC and +${challenge.xp} XP!`);
+    }
+    window.location.hash = '#/challenges';
+}
+
+function renderBattles(container) {
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-2 block">← Back to Dashboard</a>
+                        <h1 class="text-3xl font-bold font-display">Battle Arena</h1>
+                    </div>
+                    <div class="bg-bg-card border border-white/5 px-4 py-2 rounded-lg text-sm text-gray-300">
+                         Record: <span class="text-green-400 font-bold">18 W</span> - <span class="text-red-400 font-bold">9 L</span>
+                    </div>
+                </div>
+
+                <!-- Battle Types -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                    <!-- 1v1 -->
+                    <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group">
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">⚔️</div>
+                        <h3 class="text-xl font-bold mb-2">1v1 Quick Battle</h3>
+                        <p class="text-gray-400 text-sm mb-4">Challenge anyone. Win 50 CC.</p>
+                        <div class="text-xs text-green-400 mb-4">● 234 Online</div>
+                        <div class="flex gap-2">
+                            <button onclick="startMatchmaking()" class="flex-1 bg-brand hover:bg-brand/90 text-white font-bold py-2 rounded-lg transition-colors">Find Opponent</button>
+                            <button onclick="alert('Invite Link Copied: https://codesphere.io/battle/invite/123xyz')" class="bg-bg-surface hover:bg-white/10 border border-white/10 text-white font-bold px-3 rounded-lg" title="Invite Friend">🔗</button>
+                        </div>
+                    </div>
+
+                    <!-- Group -->
+                    <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group opacity-75">
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">👥</div>
+                        <h3 class="text-xl font-bold mb-2">Group Battle</h3>
+                        <p class="text-gray-400 text-sm mb-4">2-8 players. Winner takes all.</p>
+                        <button disabled class="w-full bg-bg-surface border border-white/10 text-gray-500 font-bold py-2 rounded-lg cursor-not-allowed">Coming Soon</button>
+                    </div>
+
+                    <!-- Tournament -->
+                    <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group">
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🏟️</div>
+                        <h3 class="text-xl font-bold mb-2">Weekly Tourney</h3>
+                        <p class="text-gray-400 text-sm mb-4">Prize: 500 CC. Bracket style.</p>
+                        <div class="text-xs text-gold mb-4">Starts Sunday 8PM</div>
+                        <button class="w-full bg-gold hover:bg-yellow-400 text-black font-bold py-2 rounded-lg transition-colors">Register (30 CC)</button>
+                    </div>
+
+                    <!-- Grand Prix -->
+                    <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group opacity-75">
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">👑</div>
+                        <h3 class="text-xl font-bold mb-2">Grand Prix</h3>
+                        <p class="text-gray-400 text-sm mb-4">Monthly event. 1000 CC Prize.</p>
+                        <button disabled class="w-full bg-bg-surface border border-white/10 text-gray-500 font-bold py-2 rounded-lg cursor-not-allowed">Opens Feb 28</button>
+                    </div>
+                </div>
+
+                <!-- Active Battles -->
+                <h3 class="font-bold text-lg mb-4">Live Battles</h3>
+                <div class="bg-bg-card border border-white/5 rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center font-bold text-xs">JD</div>
+                                <span class="font-bold text-sm">JohnDoe</span>
+                            </div>
+                            <span class="text-gray-500 text-xs">vs</span>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xs">MK</div>
+                                <span class="font-bold text-sm">MikeK</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs text-gold border border-gold/20 px-2 py-0.5 rounded">Intermediate</span>
+                            <button class="text-brand text-xs font-bold hover:underline">Spectate</button>
+                        </div>
+                    </div>
+                    <div class="p-4 border-b border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors">
+                         <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center font-bold text-xs">SA</div>
+                                <span class="font-bold text-sm">SarahA</span>
+                            </div>
+                            <span class="text-gray-500 text-xs">vs</span>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center font-bold text-xs">TB</div>
+                                <span class="font-bold text-sm">TomB</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs text-green-400 border border-green-400/20 px-2 py-0.5 rounded">Beginner</span>
+                            <button class="text-brand text-xs font-bold hover:underline">Spectate</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function startMatchmaking() {
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = '🔍 Searching...';
+    btn.classList.add('animate-pulse');
+
+    setTimeout(() => {
+        btn.innerText = '⚔️ Opponent Found!';
+        btn.classList.remove('animate-pulse');
+        btn.classList.replace('bg-brand', 'bg-gold');
+        btn.classList.replace('text-white', 'text-black');
+
+        setTimeout(() => {
+            alert('Match found! Redirecting to battle... (Mock)');
+            btn.disabled = false;
+            btn.innerText = originalText;
+            btn.classList.replace('bg-gold', 'bg-brand');
+            btn.classList.replace('text-black', 'text-white');
+        }, 1500);
+    }, 2000);
+}
+
+function renderGames(container) {
+    const user = state.user;
+    const activeTab = state.activeGameTab || 'beginner';
+
+    const getTabClass = (tab) => {
+        return activeTab === tab
+            ? 'bg-brand text-white shadow-lg shadow-brand/20'
+            : 'bg-bg-card border border-white/5 text-gray-400 hover:text-white hover:bg-bg-surface';
+    };
+
+    const gamesList = GAMES_DATA[activeTab] || [];
+
+    const gamesHtml = gamesList.map(game => `
+        <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group relative overflow-hidden animate-fade-in">
+            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">${game.icon}</div>
+            <h3 class="text-xl font-bold mb-2">${game.title}</h3>
+            <p class="text-gray-400 text-sm mb-4 h-10">${game.desc}</p>
+            <div class="text-xs text-gold mb-4">+${game.reward} CC for win</div>
+            <a href="${game.route}" class="block w-full text-center bg-brand hover:bg-brand/90 text-white font-bold py-2 rounded-lg transition-colors shadow-md">Play Now</a>
+        </div>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-2 block">← Back to Dashboard</a>
+                        <h1 class="text-3xl font-bold font-display">Python Game Zone</h1>
+                        <p class="text-gray-400">Learn through play. Choose your difficulty.</p>
+                    </div>
+                </div>
+
+                <!-- Difficulty Tabs -->
+                <div class="flex flex-wrap gap-4 mb-8">
+                    <button onclick="switchGameTab('beginner')" class="px-6 py-2 rounded-full text-sm font-bold transition-all ${getTabClass('beginner')}">
+                        Beginner
+                    </button>
+                    <button onclick="switchGameTab('intermediate')" class="px-6 py-2 rounded-full text-sm font-bold transition-all ${getTabClass('intermediate')}">
+                        Intermediate
+                    </button>
+                    <button onclick="switchGameTab('hardcore')" class="px-6 py-2 rounded-full text-sm font-bold transition-all ${getTabClass('hardcore')}">
+                        Hardcore
+                    </button>
+                </div>
+
+                <!-- Games Grid -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${gamesHtml}
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function switchGameTab(tab) {
+    state.activeGameTab = tab;
+    const app = document.getElementById('app');
+    renderGames(app);
+}
+
+function renderGameTypeRace(container) {
+    container.innerHTML = `
+        <div class="h-screen flex flex-col bg-bg-deep relative overflow-hidden">
+             <!-- Game Header -->
+            <header class="bg-bg-card border-b border-white/5 h-16 flex items-center px-6 justify-between shrink-0 z-10">
+                <a href="#/games" class="text-gray-400 hover:text-white">← Exit</a>
+                <div class="font-bold text-xl">⌨️ Type Race</div>
+                <div class="font-mono text-gold text-lg" id="timer">00:45</div>
+            </header>
+
+            <div class="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
+                <!-- Progress Bars -->
+                <div class="w-full max-w-3xl mb-12 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <span class="text-brand font-bold w-20 text-right">You</span>
+                        <div class="flex-1 bg-bg-surface h-4 rounded-full overflow-hidden">
+                            <div id="player-progress" class="bg-brand h-full w-0 transition-all duration-200"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 opacity-50">
+                        <span class="text-red-400 font-bold w-20 text-right">Bot</span>
+                        <div class="flex-1 bg-bg-surface h-4 rounded-full overflow-hidden">
+                            <div id="bot-progress" class="bg-red-400 h-full w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Display -->
+                <div class="bg-bg-card border border-white/10 p-8 rounded-2xl w-full max-w-3xl shadow-2xl relative">
+                    <pre class="font-mono text-lg text-gray-500 mb-6 leading-relaxed select-none" id="code-display">def hello_world():
+    print("Hello, World!")
+    return True</pre>
+
+                    <textarea
+                        id="type-input"
+                        class="w-full bg-bg-surface border border-brand/50 rounded-lg p-4 font-mono text-lg text-white outline-none focus:ring-2 focus:ring-brand placeholder-gray-600"
+                        placeholder="Type the code above..."
+                        oninput="checkTyping(this)"
+                        autofocus
+                    ></textarea>
+                </div>
+
+                <div id="game-result" class="hidden absolute inset-0 bg-bg-deep/90 z-20 flex flex-col items-center justify-center text-center">
+                    <div class="text-6xl mb-4">🏆</div>
+                    <h2 class="text-4xl font-bold text-white mb-2">You Won!</h2>
+                    <p class="text-xl text-gray-300 mb-8">Speed: <span class="text-brand font-bold">45 WPM</span> | Accuracy: <span class="text-brand font-bold">100%</span></p>
+                    <div class="flex gap-4">
+                        <button onclick="router()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg">Back to Menu</button>
+                        <button onclick="router()" class="bg-brand hover:bg-brand/90 text-white font-bold py-3 px-8 rounded-lg">Play Again</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Simple Game Logic
+    window.checkTyping = function(input) {
+        const targetText = document.getElementById('code-display').innerText;
+        const currentText = input.value;
+        const progress = (currentText.length / targetText.length) * 100;
+
+        document.getElementById('player-progress').style.width = `${progress}%`;
+
+        if (currentText === targetText) {
+            document.getElementById('game-result').classList.remove('hidden');
+            // Award Coins
+            state.user.cc += 20;
+        }
+    };
+
+    // Mock Bot
+    let botProgress = 0;
+    const botInterval = setInterval(() => {
+        if (botProgress < 100) {
+            botProgress += Math.random() * 2;
+            const botBar = document.getElementById('bot-progress');
+            if(botBar) botBar.style.width = `${botProgress}%`;
+        } else {
+            clearInterval(botInterval);
+        }
+    }, 500);
+}
+
+function renderGamePet(container) {
+    // Pet State (local to this render, reset on exit for now)
+    let petState = {
+        hunger: 50, // 0-100 (100 is full)
+        happiness: 50, // 0-100 (100 is happy)
+        energy: 50, // 0-100 (100 is energetic)
+        status: 'neutral' // happy, sleeping, eating
+    };
+
+    const updateUI = () => {
+        const hungerBar = document.getElementById('pet-hunger');
+        const happinessBar = document.getElementById('pet-happiness');
+        const energyBar = document.getElementById('pet-energy');
+        const petEmoji = document.getElementById('pet-emoji');
+
+        if (hungerBar) hungerBar.style.width = `${petState.hunger}%`;
+        if (happinessBar) happinessBar.style.width = `${petState.happiness}%`;
+        if (energyBar) energyBar.style.width = `${petState.energy}%`;
+
+        if (petEmoji) {
+            if (petState.status === 'eating') petEmoji.innerText = '🍖';
+            else if (petState.status === 'playing') petEmoji.innerText = '🎾';
+            else if (petState.status === 'sleeping') petEmoji.innerText = '💤';
+            else if (petState.happiness > 80) petEmoji.innerText = '😄';
+            else if (petState.hunger < 20) petEmoji.innerText = '🥺';
+            else petEmoji.innerText = '🐶';
+        }
+    };
+
+    const handleCommand = (cmd) => {
+        const petEmoji = document.getElementById('pet-emoji');
+        if(petEmoji) {
+            petEmoji.classList.add('animate-bounce');
+            setTimeout(() => petEmoji.classList.remove('animate-bounce'), 1000);
+        }
+
+        if (cmd === 'feed') {
+            petState.hunger = Math.min(100, petState.hunger + 20);
+            petState.status = 'eating';
+        } else if (cmd === 'play') {
+            petState.happiness = Math.min(100, petState.happiness + 20);
+            petState.energy = Math.max(0, petState.energy - 10);
+            petState.status = 'playing';
+        } else if (cmd === 'sleep') {
+            petState.energy = Math.min(100, petState.energy + 30);
+            petState.status = 'sleeping';
+        }
+
+        updateUI();
+        setTimeout(() => {
+            petState.status = 'neutral';
+            updateUI();
+        }, 1500);
+
+        // Check for "Win" condition (all stats high)
+        if (petState.hunger > 90 && petState.happiness > 90 && petState.energy > 90) {
+            // alert("You're a great pet owner! +10 CC"); // Alert is annoying in tests
+            // state.user.cc += 10;
+        }
+    };
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="absolute top-4 left-4 z-20">
+                <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+            </div>
+
+            <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-md w-full text-center relative z-10 shadow-2xl animate-fade-in">
+                <h2 class="text-3xl font-bold font-display mb-2">My Python Pet</h2>
+                <p class="text-gray-400 text-sm mb-6">Use Python commands to care for your pet.</p>
+
+                <div class="bg-bg-surface rounded-xl p-8 mb-6 h-48 flex items-center justify-center text-6xl transition-all" id="pet-container">
+                    <div id="pet-emoji" class="transition-transform duration-500">🐶</div>
+                </div>
+
+                <!-- Stats -->
+                <div class="space-y-3 mb-8">
+                    <div class="flex items-center gap-3 text-xs font-bold text-gray-400 uppercase">
+                        <span class="w-16 text-right">Hunger</span>
+                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div id="pet-hunger" class="bg-green-500 h-full w-1/2 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs font-bold text-gray-400 uppercase">
+                        <span class="w-16 text-right">Happy</span>
+                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div id="pet-happiness" class="bg-yellow-500 h-full w-1/2 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs font-bold text-gray-400 uppercase">
+                        <span class="w-16 text-right">Energy</span>
+                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div id="pet-energy" class="bg-blue-500 h-full w-1/2 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="window.handlePetCommand('feed')" class="bg-bg-surface hover:bg-green-500/20 border border-green-500/50 text-green-400 font-mono font-bold py-3 rounded-lg transition-all hover:scale-105">
+                        pet.feed()
+                    </button>
+                    <button onclick="window.handlePetCommand('play')" class="bg-bg-surface hover:bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 font-mono font-bold py-3 rounded-lg transition-all hover:scale-105">
+                        pet.play()
+                    </button>
+                    <button onclick="window.handlePetCommand('sleep')" class="bg-bg-surface hover:bg-blue-500/20 border border-blue-500/50 text-blue-400 font-mono font-bold py-3 rounded-lg transition-all hover:scale-105">
+                        pet.sleep()
+                    </button>
+                </div>
+            </div>
+
+            <!-- Character Guide -->
+            <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                    "Keep your pet happy! Use functions to interact with objects."
+                </div>
+                <div class="text-4xl">🐍</div>
+            </div>
+        </div>
+    `;
+
+    // Expose handler to window for onclick
+    window.handlePetCommand = handleCommand;
+
+    // Initial UI Update
+    setTimeout(updateUI, 0);
+}
+
+function renderGameTraffic(container) {
+    let currentLight = 'red';
+
+    const checkLogic = (userAction) => {
+        const feedback = document.getElementById('traffic-feedback');
+        if ((currentLight === 'red' && userAction === 'stop') ||
+            (currentLight === 'green' && userAction === 'go') ||
+            (currentLight === 'yellow' && userAction === 'slow')) {
+            feedback.innerText = "✅ Correct! Good logic.";
+            feedback.className = "text-green-400 font-bold mt-4 animate-bounce";
+            state.user.cc += 2;
+        } else {
+            feedback.innerText = "❌ Crash! Wrong logic.";
+            feedback.className = "text-red-400 font-bold mt-4 animate-shake";
+        }
+
+        // Cycle light after delay
+        setTimeout(() => {
+            const colors = ['red', 'yellow', 'green'];
+            currentLight = colors[(colors.indexOf(currentLight) + 1) % 3];
+            updateTrafficUI();
+            feedback.innerText = "";
+        }, 1500);
+    };
+
+    const updateTrafficUI = () => {
+        const r = document.getElementById('light-red');
+        const y = document.getElementById('light-yellow');
+        const g = document.getElementById('light-green');
+        const codeHint = document.getElementById('code-condition');
+
+        if(r) r.className = `w-16 h-16 rounded-full transition-all duration-300 ${currentLight === 'red' ? 'bg-red-500 shadow-[0_0_20px_red]' : 'bg-red-900/30'}`;
+        if(y) y.className = `w-16 h-16 rounded-full transition-all duration-300 ${currentLight === 'yellow' ? 'bg-yellow-400 shadow-[0_0_20px_yellow]' : 'bg-yellow-900/30'}`;
+        if(g) g.className = `w-16 h-16 rounded-full transition-all duration-300 ${currentLight === 'green' ? 'bg-green-500 shadow-[0_0_20px_lime]' : 'bg-green-900/30'}`;
+
+        // Update Code Hint
+        if(codeHint) codeHint.innerText = `if light == '${currentLight}':`;
+    };
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+             <div class="absolute top-4 left-4 z-20">
+                <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-12 items-center animate-fade-in">
+                <!-- Traffic Light Visual -->
+                <div class="bg-gray-800 p-6 rounded-3xl border-4 border-gray-700 shadow-2xl flex flex-col gap-4">
+                    <div id="light-red" class="w-16 h-16 rounded-full bg-red-500 shadow-[0_0_20px_red]"></div>
+                    <div id="light-yellow" class="w-16 h-16 rounded-full bg-yellow-900/30"></div>
+                    <div id="light-green" class="w-16 h-16 rounded-full bg-green-900/30"></div>
+                </div>
+
+                <!-- Code Interface -->
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+                    <h2 class="text-2xl font-bold font-display mb-4">Traffic Logic</h2>
+                    <div class="bg-bg-surface p-4 rounded-lg font-mono text-sm mb-6">
+                        <div class="text-purple-400">def</div> <span class="text-blue-400">check_traffic</span>(light):<br>
+                        &nbsp;&nbsp;<span id="code-condition" class="text-pink-400">if light == 'red':</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-gray-500"># What should we do?</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3">
+                        <button onclick="window.handleTrafficAction('stop')" class="bg-bg-surface hover:bg-red-500/20 border border-red-500/50 text-red-400 font-mono font-bold py-3 rounded-lg transition-all text-left px-4 group">
+                            <span class="opacity-50 group-hover:opacity-100 mr-2">➜</span> action = "Stop"
+                        </button>
+                        <button onclick="window.handleTrafficAction('slow')" class="bg-bg-surface hover:bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 font-mono font-bold py-3 rounded-lg transition-all text-left px-4 group">
+                            <span class="opacity-50 group-hover:opacity-100 mr-2">➜</span> action = "Slow Down"
+                        </button>
+                        <button onclick="window.handleTrafficAction('go')" class="bg-bg-surface hover:bg-green-500/20 border border-green-500/50 text-green-400 font-mono font-bold py-3 rounded-lg transition-all text-left px-4 group">
+                            <span class="opacity-50 group-hover:opacity-100 mr-2">➜</span> action = "Go"
+                        </button>
+                    </div>
+
+                    <div id="traffic-feedback" class="h-6 mt-4 text-center"></div>
+                </div>
+            </div>
+             <!-- Character Guide -->
+            <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                    "If statements help programs make decisions based on conditions!"
+                </div>
+                <div class="text-4xl">🐍</div>
+            </div>
+        </div>
+    `;
+
+    window.handleTrafficAction = checkLogic;
+}
+
+function renderGameBlocks(container) {
+    // Puzzle Data (Mock one level)
+    const puzzle = {
+        title: "Print Loop",
+        desc: "Arrage the blocks to print numbers 1 to 5.",
+        blocks: [
+            { id: 'b1', text: 'print(i)' },
+            { id: 'b2', text: 'for i in range(1, 6):' },
+            { id: 'b3', text: 'i = 0' }, // distractor
+        ],
+        solution: ['b2', 'b1']
+    };
+
+    // State (closure)
+    let workspace = [];
+    let available = [...puzzle.blocks]; // Clone
+
+    const updateUI = () => {
+        const workspaceDiv = document.getElementById('workspace-area');
+        const availableDiv = document.getElementById('available-area');
+        // Check if elements exist (might have navigated away)
+        if(!workspaceDiv || !availableDiv) return;
+
+        // Render Workspace
+        workspaceDiv.innerHTML = workspace.length === 0
+            ? '<div class="text-gray-500 italic text-center py-8">Tap blocks to add them here</div>'
+            : workspace.map((block, index) => `
+                <div onclick="window.removeBlock(${index})" class="bg-bg-surface border border-brand/50 text-white p-3 rounded-lg mb-2 cursor-pointer hover:bg-red-900/20 transition-colors font-mono shadow-sm flex items-center justify-between group animate-fade-in">
+                    <span>${block.text}</span>
+                    <span class="text-xs text-red-400 opacity-0 group-hover:opacity-100">✕</span>
+                </div>
+            `).join('');
+
+        // Render Available
+        availableDiv.innerHTML = available.map((block, index) => `
+            <div onclick="window.addBlock(${index})" class="bg-bg-card border border-white/10 text-gray-300 p-3 rounded-lg mb-2 cursor-pointer hover:bg-brand/20 hover:text-white transition-colors font-mono shadow-sm">
+                ${block.text}
+            </div>
+        `).join('');
+    };
+
+    window.addBlock = (index) => {
+        const block = available.splice(index, 1)[0];
+        workspace.push(block);
+        updateUI();
+        const fb = document.getElementById('blocks-feedback');
+        if(fb) fb.innerText = "";
+    };
+
+    window.removeBlock = (index) => {
+        const block = workspace.splice(index, 1)[0];
+        available.push(block);
+        updateUI();
+        const fb = document.getElementById('blocks-feedback');
+        if(fb) fb.innerText = "";
+    };
+
+    window.checkBlocks = () => {
+        const currentIds = workspace.map(b => b.id);
+        const feedback = document.getElementById('blocks-feedback');
+
+        // Check exact match
+        if (JSON.stringify(currentIds) === JSON.stringify(puzzle.solution)) {
+            feedback.innerHTML = "✅ Correct! Loop built successfully.";
+            feedback.className = "text-green-400 font-bold mt-4 animate-bounce";
+            state.user.cc += 15;
+            // Disable further edits or show next level button (mock)
+        } else {
+            feedback.innerHTML = "❌ Not quite. Check order & indentation.";
+            feedback.className = "text-red-400 font-bold mt-4 animate-shake";
+        }
+    };
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+             <div class="absolute top-4 left-4 z-20">
+                <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+            </div>
+
+            <div class="max-w-4xl w-full grid md:grid-cols-2 gap-8 p-6 animate-fade-in z-10">
+                <!-- Available Blocks (Toolbox) -->
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold font-display mb-4 text-gray-400">Toolbox</h3>
+                    <div id="available-area" class="space-y-2 min-h-[300px]"></div>
+                </div>
+
+                <!-- Workspace -->
+                <div class="bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-6 relative">
+                     <h3 class="text-xl font-bold font-display mb-4 text-brand">Workspace</h3>
+                     <div id="workspace-area" class="space-y-2 min-h-[300px]"></div>
+
+                     <!-- Run Button -->
+                     <button onclick="window.checkBlocks()" class="absolute bottom-6 right-6 bg-green-500 hover:bg-green-600 text-black font-bold py-3 px-8 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
+                        <span>▶</span> Run Code
+                     </button>
+                </div>
+            </div>
+
+            <div id="blocks-feedback" class="text-center h-8 font-bold text-xl z-10"></div>
+
+             <!-- Character Guide -->
+            <div class="absolute bottom-4 left-4 flex items-end gap-2 animate-fade-in">
+                <div class="text-4xl">🤖</div>
+                <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-bl-none text-xs max-w-[200px] text-gray-300">
+                    "Order matters! Computers execute code line by line."
+                </div>
+            </div>
+        </div>
+    `;
+
+    setTimeout(updateUI, 0);
+}
+
+function renderGameQuiz(container, mode) { // mode: 'guess' or 'fill'
+    const QUESTIONS = {
+        guess: [
+            {
+                q: "What is the output?",
+                code: "print(2 + 2 * 3)",
+                options: ["8", "12", "10", "Error"],
+                answer: "8"
+            },
+            {
+                q: "What does len() do?",
+                code: "print(len('Hello'))",
+                options: ["Prints 'Hello'", "Returns 5", "Returns 1", "Error"],
+                answer: "Returns 5"
+            }
+        ],
+        fill: [
+            {
+                q: "Complete the loop.",
+                code: "___ i in range(5):\n    print(i)",
+                answer: "for"
+            },
+            {
+                q: "Define a function.",
+                code: "___ my_func():\n    return True",
+                answer: "def"
+            }
+        ]
+    };
+
+    let currentQ = 0;
+    const questions = QUESTIONS[mode];
+
+    const renderQuestion = () => {
+        if (currentQ >= questions.length) {
+            container.innerHTML = `
+                <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center text-center">
+                    <h2 class="text-4xl font-bold text-gold mb-4">Quiz Complete! 🏆</h2>
+                    <p class="text-gray-300 mb-8">You mastered this section.</p>
+                    <a href="#/games" class="bg-brand text-white px-8 py-3 rounded-lg font-bold">Back to Games</a>
+                </div>
+            `;
+            return;
+        }
+
+        const q = questions[currentQ];
+        const isGuess = mode === 'guess';
+
+        let inputArea = '';
+        if (isGuess) {
+            inputArea = `
+                <div class="grid grid-cols-2 gap-4">
+                    ${q.options.map(opt => `
+                        <button onclick="window.checkQuizAnswer('${opt}')" class="bg-bg-surface hover:bg-white/10 border border-white/10 text-white font-bold py-4 rounded-lg transition-colors">
+                            ${opt}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            inputArea = `
+                <div class="flex gap-4">
+                    <input type="text" id="fill-input" class="flex-1 bg-bg-surface border border-brand rounded-lg p-4 text-white font-mono outline-none focus:ring-2 focus:ring-brand" placeholder="Type answer...">
+                    <button onclick="window.checkQuizAnswer(document.getElementById('fill-input').value)" class="bg-brand hover:bg-brand/90 text-white px-8 rounded-lg font-bold">Check</button>
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+                 <div class="absolute top-4 left-4 z-20">
+                    <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+                </div>
+
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate-fade-in relative z-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Question ${currentQ + 1}/${questions.length}</span>
+                        <span class="text-brand font-bold text-sm">${mode === 'guess' ? 'Guess Output' : 'Fill Blanks'}</span>
+                    </div>
+
+                    <h2 class="text-2xl font-bold font-display mb-6">${q.q}</h2>
+
+                    <div class="bg-gray-900 rounded-lg p-6 mb-8 border border-white/5 font-mono text-lg text-gray-300 relative">
+                        ${q.code.replace(/\n/g, '<br>')}
+                    </div>
+
+                    ${inputArea}
+
+                    <div id="quiz-feedback" class="h-6 mt-4 text-center font-bold"></div>
+                </div>
+
+                <!-- Character Guide -->
+                <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                    <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                        ${mode === 'guess' ? '"Analyze the code step by step!"' : '"Fill in the missing Python keyword."'}
+                    </div>
+                    <div class="text-4xl">🤔</div>
+                </div>
+            </div>
+        `;
+    };
+
+    window.checkQuizAnswer = (ans) => {
+        const q = questions[currentQ];
+        const feedback = document.getElementById('quiz-feedback');
+
+        // Normalize for fill-in (trim, lowercase)
+        const isCorrect = mode === 'guess'
+            ? ans === q.answer
+            : ans.trim().toLowerCase() === q.answer.toLowerCase();
+
+        if (isCorrect) {
+            feedback.innerText = "✅ Correct!";
+            feedback.className = "text-green-400 mt-4 animate-bounce";
+            state.user.cc += 15;
+            setTimeout(() => {
+                currentQ++;
+                renderQuestion();
+            }, 1000);
+        } else {
+            feedback.innerText = "❌ Try Again!";
+            feedback.className = "text-red-400 mt-4 animate-shake";
+        }
+    };
+
+    renderQuestion();
+}
+
+function renderGameBugBuster(container) {
+    const bugs = [
+        {
+            code: `def calculate_sum(a, b)\n    return a + b`,
+            errorLine: 0,
+            fixOptions: ["def calculate_sum(a, b):", "func calculate_sum(a, b)", "define calculate_sum(a, b)"],
+            correctFix: "def calculate_sum(a, b):",
+            desc: "Syntax Error: Missing colon"
+        },
+        {
+            code: `x = 10\nif x = 10:\n    print("Equal")`,
+            errorLine: 1,
+            fixOptions: ["if x == 10:", "if x is 10:", "if x equals 10"],
+            correctFix: "if x == 10:",
+            desc: "Syntax Error: Assignment vs Comparison"
+        }
+    ];
+
+    let currentBug = 0;
+
+    const renderBug = () => {
+        if (currentBug >= bugs.length) {
+            container.innerHTML = `
+                <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center text-center">
+                    <h2 class="text-4xl font-bold text-gold mb-4">All Bugs Squashed! 🐛🚫</h2>
+                    <p class="text-gray-300 mb-8">Great debugging skills.</p>
+                    <a href="#/games" class="bg-brand text-white px-8 py-3 rounded-lg font-bold">Back to Games</a>
+                </div>
+            `;
+            return;
+        }
+
+        const b = bugs[currentBug];
+        const lines = b.code.split('\n');
+
+        container.innerHTML = `
+             <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+                 <div class="absolute top-4 left-4 z-20">
+                    <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+                </div>
+
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate-fade-in relative z-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-brand font-bold text-sm">🐛 Bug Buster</span>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Level ${currentBug + 1}</span>
+                    </div>
+
+                    <h2 class="text-2xl font-bold font-display mb-2">Find the Bug</h2>
+                    <p class="text-gray-400 text-sm mb-6">${b.desc}</p>
+
+                    <div class="bg-gray-900 rounded-lg p-6 mb-8 border border-white/5 font-mono text-lg text-gray-300 relative">
+                        ${lines.map((line, idx) => `
+                            <div class="flex gap-4 group cursor-pointer hover:bg-white/5 p-1 rounded" onclick="window.fixBug(${idx})">
+                                <span class="text-gray-600 select-none w-6 text-right">${idx + 1}</span>
+                                <span class="${idx === b.errorLine ? 'text-red-300 decoration-wavy underline decoration-red-500' : ''}">${line}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div id="bug-fix-area"></div>
+                </div>
+
+                <!-- Character Guide -->
+                <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                    <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                        "Read the error message carefully! Tap the line to fix it."
+                    </div>
+                    <div class="text-4xl">🕵️‍♀️</div>
+                </div>
+            </div>
+        `;
+    };
+
+    window.fixBug = (lineIdx) => {
+        const b = bugs[currentBug];
+        if (lineIdx !== b.errorLine) {
+            alert("That line looks okay!");
+            return;
+        }
+
+        const fixArea = document.getElementById('bug-fix-area');
+        fixArea.innerHTML = `
+            <h3 class="font-bold text-white mb-2">How to fix line ${lineIdx + 1}?</h3>
+            <div class="space-y-2">
+                ${b.fixOptions.map(opt => `
+                    <button onclick="window.applyFix('${opt.replace(/'/g, "\\'")}')" class="w-full text-left bg-bg-surface hover:bg-brand/20 border border-white/10 p-3 rounded font-mono text-sm transition-colors">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+    };
+
+    window.applyFix = (fix) => {
+        const b = bugs[currentBug];
+        if (fix === b.correctFix) {
+             state.user.cc += 20;
+             currentBug++;
+             renderBug();
+        } else {
+            alert("Not quite right. Try again!");
+        }
+    };
+
+    renderBug();
+}
+
+function renderStore(container) {
+    const user = state.user;
+
+    const itemsHtml = STORE_ITEMS.map(item => {
+        const owned = user.inventory.includes(item.id);
+        const canAfford = user.cc >= item.price;
+
+        return `
+            <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group">
+                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">${item.icon}</div>
+                <h3 class="text-xl font-bold mb-1">${item.name}</h3>
+                <p class="text-xs text-gray-400 mb-4 h-8">${item.desc}</p>
+
+                <div class="flex items-center justify-between mt-auto">
+                    <span class="text-gold font-bold">${item.price} CC</span>
+                    <button
+                        onclick="buyItem('${item.id}', ${item.price})"
+                        ${owned ? 'disabled' : (canAfford ? '' : 'disabled')}
+                        class="px-4 py-2 rounded-lg text-sm font-bold transition-colors ${owned ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : (canAfford ? 'bg-brand hover:bg-brand/90 text-white' : 'bg-red-500/20 text-red-400 cursor-not-allowed border border-red-500/20')}"
+                    >
+                        ${owned ? 'Owned' : (canAfford ? 'Buy' : 'Need CC')}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-2 block">← Back to Dashboard</a>
+                        <h1 class="text-3xl font-bold font-display">CodeCoin Store</h1>
+                    </div>
+                    <div class="bg-bg-card border border-white/5 px-4 py-2 rounded-lg text-lg font-bold text-gold flex items-center gap-2">
+                         <span>🪙</span> ${user.cc} CC
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    ${itemsHtml}
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function buyItem(id, price) {
+    if (state.user.cc >= price && !state.user.inventory.includes(id)) {
+        state.user.cc -= price;
+        state.user.inventory.push(id);
+        showToast('Item Purchased! 🎉');
+
+        // Re-render
+        const app = document.getElementById('app');
+        renderStore(app);
+    }
+}
+
+function renderProfile(container) {
+    const user = state.user;
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+                <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-6 block">← Back to Dashboard</a>
+
+                <!-- Profile Header -->
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-8 mb-8 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-brand to-teal-500 opacity-20"></div>
+
+                    <div class="relative flex flex-col md:flex-row items-center gap-6">
+                        <div class="w-24 h-24 rounded-full bg-bg-surface border-4 border-bg-deep flex items-center justify-center text-4xl shadow-xl">
+                            🐍
+                        </div>
+                        <div class="text-center md:text-left">
+                            <h1 class="text-3xl font-bold font-display">${user.name}</h1>
+                            <p class="text-brand font-mono">@${user.username}</p>
+                            <p class="text-gray-400 text-sm mt-2 max-w-md">Python enthusiast. Level 12 Coder. Battling my way to the top.</p>
+                        </div>
+                        <div class="md:ml-auto flex gap-4">
+                            <button class="bg-bg-surface hover:bg-white/10 border border-white/10 px-4 py-2 rounded-lg text-sm font-bold text-white transition-colors">Edit Profile</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-gold text-2xl mb-1">⚡</div>
+                        <div class="text-2xl font-bold">${user.xp}</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">XP Earned</div>
+                    </div>
+                    <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-gold text-2xl mb-1">🪙</div>
+                        <div class="text-2xl font-bold">${user.cc}</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">Balance</div>
+                    </div>
+                    <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-orange-500 text-2xl mb-1">🔥</div>
+                        <div class="text-2xl font-bold">${user.streak}</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">Day Streak</div>
+                    </div>
+                    <div class="bg-bg-card p-4 rounded-xl border border-white/5 text-center">
+                        <div class="text-brand text-2xl mb-1">⚔️</div>
+                        <div class="text-2xl font-bold">${user.solvedChallenges.length}</div>
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wide">Challenges</div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Badges -->
+                    <div class="bg-bg-card border border-white/5 rounded-2xl p-6">
+                        <h3 class="font-bold text-lg mb-4">Badges</h3>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="aspect-square bg-bg-surface rounded-xl flex items-center justify-center text-2xl border border-brand/50 shadow-[0_0_15px_rgba(43,186,96,0.2)]" title="First Steps">🌱</div>
+                            <div class="aspect-square bg-bg-surface rounded-xl flex items-center justify-center text-2xl border border-gold/50 shadow-[0_0_15px_rgba(255,192,0,0.2)]" title="Rich">💰</div>
+                            <div class="aspect-square bg-bg-surface rounded-xl flex items-center justify-center text-2xl border border-blue-500/50" title="Battle Born">⚔️</div>
+                            <div class="aspect-square bg-bg-surface/30 rounded-xl flex items-center justify-center text-2xl opacity-30 grayscale">🏆</div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Heatmap (Mock) -->
+                    <div class="bg-bg-card border border-white/5 rounded-2xl p-6">
+                        <h3 class="font-bold text-lg mb-4">Activity</h3>
+                        <div class="grid grid-cols-10 gap-1">
+                             ${Array(50).fill(0).map(() => {
+                                 const opacity = Math.random() > 0.7 ? 'bg-brand' : (Math.random() > 0.4 ? 'bg-brand/40' : 'bg-bg-surface');
+                                 return `<div class="aspect-square rounded-sm ${opacity}"></div>`;
+                             }).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+function renderLeaderboard(container) {
+    const user = state.user;
+
+    // Mock Leaderboard Data
+    const leaderboardData = [
+        { rank: 1, name: 'AlexCode', xp: 24500, cc: 820, battles: 15, streak: 30, avatar: 'bg-green-500' },
+        { rank: 2, name: 'SarahPy', xp: 22100, cc: 540, battles: 12, streak: 25, avatar: 'bg-blue-500' },
+        { rank: 3, name: 'DevMike', xp: 19800, cc: 380, battles: 10, streak: 20, avatar: 'bg-purple-500' },
+        { rank: 4, name: 'CoderJane', xp: 18500, cc: 320, battles: 8, streak: 18, avatar: 'bg-orange-500' },
+        { rank: 5, name: 'PyMaster', xp: 17200, cc: 290, battles: 6, streak: 15, avatar: 'bg-teal-500' },
+        // ... more users
+    ];
+
+    // Add current user if not in top list (mock logic)
+    const userRank = 47;
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-2 block">← Back to Dashboard</a>
+                        <h1 class="text-3xl font-bold font-display">Global Leaderboard</h1>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-bold">Global</button>
+                        <button class="bg-bg-card border border-white/5 text-gray-400 px-4 py-2 rounded-lg text-sm font-bold hover:text-white">Friends</button>
+                    </div>
+                </div>
+
+                <!-- Top 3 Podium -->
+                <div class="flex justify-center items-end gap-4 mb-12">
+                    <!-- 2nd Place -->
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-full bg-blue-500 border-4 border-bg-deep mx-auto mb-2 flex items-center justify-center font-bold text-xl relative">
+                            SP
+                            <div class="absolute -bottom-2 bg-bg-surface text-xs font-bold px-2 py-0.5 rounded border border-white/10">#2</div>
+                        </div>
+                        <div class="font-bold text-white">SarahPy</div>
+                        <div class="text-xs text-gold">22,100 XP</div>
+                        <div class="h-24 w-20 bg-bg-card border-t-4 border-gray-400 rounded-t-lg mx-auto mt-2 opacity-80"></div>
+                    </div>
+
+                    <!-- 1st Place -->
+                    <div class="text-center relative z-10">
+                        <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-4xl animate-bounce">👑</div>
+                        <div class="w-20 h-20 rounded-full bg-green-500 border-4 border-gold mx-auto mb-2 flex items-center justify-center font-bold text-2xl relative shadow-[0_0_20px_rgba(255,192,0,0.3)]">
+                            AC
+                            <div class="absolute -bottom-2 bg-gold text-black text-xs font-bold px-2 py-0.5 rounded border border-white/10">#1</div>
+                        </div>
+                        <div class="font-bold text-gold text-lg">AlexCode</div>
+                        <div class="text-xs text-gold font-bold">24,500 XP</div>
+                        <div class="h-32 w-24 bg-bg-card border-t-4 border-gold rounded-t-lg mx-auto mt-2 bg-gradient-to-b from-gold/10 to-transparent"></div>
+                    </div>
+
+                    <!-- 3rd Place -->
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-full bg-purple-500 border-4 border-bg-deep mx-auto mb-2 flex items-center justify-center font-bold text-xl relative">
+                            DM
+                            <div class="absolute -bottom-2 bg-bg-surface text-xs font-bold px-2 py-0.5 rounded border border-white/10">#3</div>
+                        </div>
+                        <div class="font-bold text-white">DevMike</div>
+                        <div class="text-xs text-gold">19,800 XP</div>
+                        <div class="h-20 w-20 bg-bg-card border-t-4 border-orange-700 rounded-t-lg mx-auto mt-2 opacity-80"></div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Table -->
+                <div class="bg-bg-card border border-white/5 rounded-2xl overflow-hidden">
+                    <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/5 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <div class="col-span-1 text-center">Rank</div>
+                        <div class="col-span-5">Player</div>
+                        <div class="col-span-2 text-right">XP</div>
+                        <div class="col-span-2 text-right">CC</div>
+                        <div class="col-span-2 text-center">Streak</div>
+                    </div>
+
+                    ${leaderboardData.slice(3).map(p => `
+                        <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/5 items-center hover:bg-white/5 transition-colors">
+                            <div class="col-span-1 text-center font-bold text-gray-400">#${p.rank}</div>
+                            <div class="col-span-5 flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full ${p.avatar} flex items-center justify-center font-bold text-xs shadow-lg">
+                                    ${p.name.substring(0,2).toUpperCase()}
+                                </div>
+                                <span class="font-bold text-white">${p.name}</span>
+                            </div>
+                            <div class="col-span-2 text-right font-mono text-gold">${p.xp.toLocaleString()}</div>
+                            <div class="col-span-2 text-right font-mono text-gray-400">${p.cc}</div>
+                            <div class="col-span-2 text-center text-orange-500 font-bold">🔥 ${p.streak}</div>
+                        </div>
+                    `).join('')}
+
+                    <!-- User Row (Pinned) -->
+                    <div class="grid grid-cols-12 gap-4 px-6 py-4 bg-brand/10 border-t border-brand/20 items-center">
+                        <div class="col-span-1 text-center font-bold text-brand">#${userRank}</div>
+                        <div class="col-span-5 flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center font-bold text-xs shadow-lg text-white">
+                                YOU
+                            </div>
+                            <span class="font-bold text-white">${user.name} (You)</span>
+                        </div>
+                        <div class="col-span-2 text-right font-mono text-gold font-bold">${user.xp.toLocaleString()}</div>
+                        <div class="col-span-2 text-right font-mono text-gray-400">${user.cc}</div>
+                        <div class="col-span-2 text-center text-orange-500 font-bold">🔥 ${user.streak}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function renderNotes(container) {
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+                <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-6 block">← Back to Dashboard</a>
+                <div class="flex items-center justify-between mb-8">
+                    <h1 class="text-3xl font-bold font-display">Study Notes & Mind Maps</h1>
+                    <p class="text-gray-400">Download resources to boost your learning.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    ${NOTES_DATA.map(note => `
+                        <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all flex items-start gap-4">
+                            <div class="text-3xl">${note.type === 'pdf' ? '📄' : (note.type === 'image' ? '🖼️' : '📝')}</div>
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg mb-1">${note.title}</h3>
+                                <p class="text-xs text-gray-500 mb-4 uppercase">${note.type} • ${note.size}</p>
+                                <button onclick="alert('Downloading ${note.title}...')" class="text-brand font-bold text-sm hover:underline flex items-center gap-1">
+                                    <span>⬇</span> Download
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function renderTheory(container) {
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+                 <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-6 block">← Back to Dashboard</a>
+                <h1 class="text-3xl font-bold font-display mb-8">Theory Hub</h1>
+
+                <!-- Random Article -->
+                <div class="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-white/10 rounded-2xl p-8 mb-12 text-center">
+                    <h2 class="text-2xl font-bold mb-2">Feeling Lucky? 🎲</h2>
+                    <p class="text-gray-400 mb-6">Learn a random Python concept.</p>
+                    <button onclick="window.location.hash='#/topic/ch1-t1'" class="bg-white text-black font-bold px-8 py-3 rounded-full hover:bg-gray-200 transition-colors">
+                        Read Random Topic
+                    </button>
+                </div>
+
+                <!-- Browse by Level -->
+                <h2 class="text-xl font-bold mb-6 border-b border-white/5 pb-2">Browse by Level</h2>
+                <div class="space-y-4">
+                    ${ROADMAP_DATA.map(track => `
+                        <div class="bg-bg-card border border-white/5 rounded-xl p-6">
+                            <h3 class="font-bold text-lg text-brand mb-1">${track.title}</h3>
+                            <p class="text-sm text-gray-400 mb-4">${track.desc || 'Master these concepts.'}</p>
+                            <div class="grid md:grid-cols-2 gap-3">
+                                ${track.chapters.map(ch => `
+                                    <div class="bg-bg-surface p-3 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/10 cursor-pointer transition-colors">
+                                        📄 ${ch.title}
+                                    </div>
+                                `).join('')}
+                                ${track.chapters.length === 0 ? '<div class="text-xs text-gray-500 italic">Content coming soon...</div>' : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function renderPractice(container) {
+    // State for practice session
+    let currentQ = null;
+
+    const generateQuestion = (level) => {
+        let pool = PRACTICE_QUESTIONS;
+        if (level !== 'random') {
+            pool = PRACTICE_QUESTIONS.filter(q => q.level === level);
+        }
+
+        if (pool.length === 0) {
+            alert("No questions found for this level yet!");
+            return;
+        }
+
+        const randomIdx = Math.floor(Math.random() * pool.length);
+        currentQ = pool[randomIdx];
+        renderUI();
+    };
+
+    const renderUI = () => {
+        const questionArea = document.getElementById('practice-question');
+        if (questionArea) {
+             questionArea.innerHTML = currentQ ? `
+                <div class="animate-fade-in">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-brand/20 text-brand text-xs font-bold px-2 py-1 rounded uppercase">${currentQ.level}</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">${currentQ.text}</h3>
+                </div>
+            ` : '<div class="text-gray-500 italic">Select a difficulty to generate a question.</div>';
+        }
+    };
+
+    container.innerHTML = `
+        <div class="h-screen flex flex-col bg-bg-deep overflow-hidden">
+            <!-- Header -->
+            <header class="bg-bg-card border-b border-white/5 h-16 flex items-center px-6 justify-between shrink-0">
+                <a href="#/dashboard" class="text-gray-400 hover:text-white">← Exit</a>
+                <h1 class="font-bold text-xl">🐍 Practice Arena</h1>
+                <div class="w-8"></div>
+            </header>
+
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Sidebar Control -->
+                <div class="w-64 bg-bg-card border-r border-white/5 p-6 flex flex-col gap-6 overflow-y-auto">
+                    <div>
+                        <h3 class="font-bold text-gray-400 text-sm uppercase tracking-wider mb-4">Generate Question</h3>
+                        <div class="space-y-2">
+                            <button onclick="window.genQ('random')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🎲 Random</button>
+                            <button onclick="window.genQ('level0')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">👶 Level 0</button>
+                            <button onclick="window.genQ('beginner')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🌱 Beginner</button>
+                            <button onclick="window.genQ('intermediate')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🔥 Intermediate</button>
+                            <button onclick="window.genQ('advanced')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🚀 Advanced</button>
+                            <button onclick="window.genQ('master')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">👑 Master</button>
+                            <button onclick="window.genQ('specialist')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🎓 Specialist</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Editor Area -->
+                <div class="flex-1 flex flex-col bg-[#1e1e1e]">
+                    <!-- Question Display -->
+                    <div id="practice-question" class="bg-bg-deep border-b border-white/10 p-6 min-h-[120px] flex flex-col justify-center">
+                        <div class="text-gray-500 italic">Select a difficulty to generate a question.</div>
+                    </div>
+
+                    <!-- Editor -->
+                    <div class="flex-1 relative">
+                        <textarea class="absolute inset-0 bg-transparent text-gray-300 p-6 font-mono resize-none outline-none leading-relaxed text-sm" spellcheck="false" placeholder="# Write your solution here..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Expose to window
+    window.genQ = generateQuestion;
+}
+
+function renderAdminDashboard(container) {
+    container.innerHTML = `
+        <div class="min-h-screen bg-gray-900 pb-20">
+            <!-- Admin Header -->
+            <header class="bg-gray-800 border-b border-gray-700 h-16 flex items-center px-6 justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🛡️</span>
+                    <span class="font-bold text-lg text-white">Admin Panel</span>
+                </div>
+                <button onclick="logout()" class="text-sm text-gray-400 hover:text-white">Sign Out</button>
+            </header>
+
+            <main class="max-w-7xl mx-auto px-6 py-8">
+                <h1 class="text-3xl font-bold text-white mb-8">System Overview</h1>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Total Users</div>
+                        <div class="text-3xl font-bold text-white">${ADMIN_DATA.totalUsers.toLocaleString()}</div>
+                        <div class="text-green-400 text-sm mt-1">↑ 12% this week</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Active Battles</div>
+                        <div class="text-3xl font-bold text-white">${ADMIN_DATA.activeBattles}</div>
+                        <div class="text-green-400 text-sm mt-1">● Live now</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Est. Revenue</div>
+                        <div class="text-3xl font-bold text-gold">$${ADMIN_DATA.revenue.toLocaleString()}</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Reports</div>
+                        <div class="text-3xl font-bold text-red-400">${ADMIN_DATA.reports}</div>
+                        <div class="text-red-400 text-sm mt-1">Needs attention</div>
+                    </div>
+                </div>
+
+                <!-- Management Sections -->
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- User Management -->
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+                        <h3 class="text-xl font-bold text-white mb-4">User Management</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between bg-gray-900 p-3 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-xs">U1</div>
+                                    <span class="text-white text-sm">user_123</span>
+                                </div>
+                                <button class="text-red-400 text-xs font-bold border border-red-400/30 px-3 py-1 rounded hover:bg-red-400/10">Ban User</button>
+                            </div>
+                            <div class="flex items-center justify-between bg-gray-900 p-3 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs">U2</div>
+                                    <span class="text-white text-sm">python_pro</span>
+                                </div>
+                                <button class="text-red-400 text-xs font-bold border border-red-400/30 px-3 py-1 rounded hover:bg-red-400/10">Ban User</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Management -->
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+                        <h3 class="text-xl font-bold text-white mb-4">Content Controls</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                + Add Challenge
+                            </button>
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                + Add Quiz Question
+                            </button>
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                📣 Send Notification
+                            </button>
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                ⚙️ System Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    `;
+}
+
+function renderNotFound(c) { c.innerHTML = '<div class="p-10 text-center text-4xl">404 - Page Not Found</div>'; }
+
+// --- Initialization ---
+window.addEventListener('hashchange', router);
+window.addEventListener('load', router);
+</script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
