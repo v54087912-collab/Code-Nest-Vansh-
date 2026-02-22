@@ -6,7 +6,7 @@ def run():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={'width': 375, 'height': 812})
         page = context.new_page()
-        page.goto("http://localhost:8080")
+        page.goto("http://localhost:8080/app.html")
         try:
             page.wait_for_selector(".cm-editor", timeout=10000)
         except:

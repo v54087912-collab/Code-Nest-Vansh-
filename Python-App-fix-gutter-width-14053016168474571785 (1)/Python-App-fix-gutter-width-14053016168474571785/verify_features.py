@@ -29,7 +29,7 @@ def run():
         """)
 
         print("\n--- 1. Loading App ---")
-        page.goto("http://localhost:8080")
+        page.goto("http://localhost:8080/app.html")
         try:
             page.wait_for_selector(".cm-editor", timeout=10000)
             time.sleep(1)
