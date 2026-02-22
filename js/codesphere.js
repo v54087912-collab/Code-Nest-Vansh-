@@ -20,8 +20,26 @@ const MOCK_USER = {
 
 const ROADMAP_DATA = [
     {
+        id: 'level0',
+        title: '👶 Level 0: Python Foundations',
+        desc: '40% Theory, 60% Practice. Start here.',
+        totalCC: 100,
+        chapters: [
+            {
+                id: 'l0-ch1',
+                title: 'Introduction to Programming',
+                reward: 20,
+                topics: [
+                    { id: 'l0-t1', title: 'How Computers Think', reward: 5, readTime: '10 min' },
+                    { id: 'l0-t2', title: 'Why Python?', reward: 5, readTime: '5 min' }
+                ]
+            }
+        ]
+    },
+    {
         id: 'beginner',
         title: '🌱 Beginner Track',
+        desc: 'Core syntax and basic logic.',
         totalCC: 130,
         chapters: [
             {
@@ -46,8 +64,93 @@ const ROADMAP_DATA = [
                 ]
             }
         ]
+    },
+    {
+        id: 'intermediate',
+        title: '🔥 Intermediate Track',
+        desc: 'Data structures and functions.',
+        totalCC: 150,
+        chapters: [
+            {
+                id: 'ch3',
+                title: 'Data Structures',
+                reward: 40,
+                topics: [
+                    { id: 'ch3-t1', title: 'Lists & Tuples', reward: 10, readTime: '15 min' },
+                    { id: 'ch3-t2', title: 'Dictionaries & Sets', reward: 10, readTime: '15 min' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'advanced',
+        title: '🚀 Advanced Track',
+        desc: 'OOP, Decorators, Generators.',
+        totalCC: 200,
+        chapters: []
+    },
+    {
+        id: 'master',
+        title: '👑 Master Track',
+        desc: 'Concurrency, Metaclasses, Optimization.',
+        totalCC: 300,
+        chapters: []
+    },
+    {
+        id: 'specialist',
+        title: '🎓 Python Specialist',
+        desc: 'Choose your path: Data Science, Web, or AI.',
+        totalCC: 500,
+        chapters: [
+            {
+                id: 'spec-ds',
+                title: 'Data Science Library',
+                reward: 100,
+                topics: [
+                    { id: 'ds-pandas', title: 'Pandas', reward: 20, readTime: '30 min' },
+                    { id: 'ds-numpy', title: 'NumPy', reward: 20, readTime: '25 min' }
+                ]
+            },
+            {
+                id: 'spec-web',
+                title: 'Web Development Library',
+                reward: 100,
+                topics: [
+                    { id: 'web-flask', title: 'Flask', reward: 20, readTime: '30 min' },
+                    { id: 'web-django', title: 'Django', reward: 20, readTime: '40 min' }
+                ]
+            }
+        ]
     }
 ];
+
+const NOTES_DATA = [
+    { id: 'n1', title: 'Python Cheat Sheet (PDF)', type: 'pdf', size: '2.5 MB' },
+    { id: 'n2', title: 'Data Structures Mind Map', type: 'image', size: '1.2 MB' },
+    { id: 'n3', title: 'OOP Concepts Chart', type: 'image', size: '800 KB' },
+    { id: 'n4', title: '100 Python Interview Q&A', type: 'doc', size: '500 KB' }
+];
+
+const PRACTICE_QUESTIONS = [
+    { id: 'p1', level: 'level0', text: "Write a program to print 'Hello World'." },
+    { id: 'p2', level: 'beginner', text: "Create a variable 'x' equal to 5 and print it." },
+    { id: 'p3', level: 'intermediate', text: "Write a function that reverses a list." },
+    { id: 'p4', level: 'advanced', text: "Create a decorator that times a function's execution." },
+    { id: 'p5', level: 'master', text: "Implement a thread-safe singleton class." },
+    { id: 'p6', level: 'specialist', text: "Load a CSV file using Pandas and print the first 5 rows." }
+];
+
+const ADMIN_CREDENTIALS = {
+    email: 'vanshkumar1653@gmail.com',
+    pass: 'vansh1'
+};
+
+const ADMIN_DATA = {
+    totalUsers: 54321,
+    activeBattles: 128,
+    revenue: 12450, // simulated
+    reports: 3
+};
 
 const CHALLENGE_DATA = [
     {
@@ -193,6 +296,19 @@ function router() {
         case '#/leaderboard':
             requireAuth(() => renderLeaderboard(app));
             break;
+        case '#/notes':
+            requireAuth(() => renderNotes(app));
+            break;
+        case '#/practice':
+            requireAuth(() => renderPractice(app));
+            break;
+        case '#/theory':
+            requireAuth(() => renderTheory(app));
+            break;
+        case '#/admin':
+            if (state.isAdmin) renderAdminDashboard(app);
+            else renderNotFound(app);
+            break;
         case '#/logout':
             logout();
             break;
@@ -219,8 +335,18 @@ function requireAuth(renderFn) {
     }
 }
 
-function login() {
+function login(email, pass) {
+    // Admin Check
+    if (email === ADMIN_CREDENTIALS.email && pass === ADMIN_CREDENTIALS.pass) {
+        state.user = { name: 'Admin Vansh', username: 'admin', cc: 99999, xp: 99999, streak: 999, completedTopics: [], solvedChallenges: [], inventory: [], battles: { w: 999, l: 0 } };
+        state.isAdmin = true;
+        window.location.hash = '#/admin';
+        return;
+    }
+
+    // Default User Login
     state.user = { ...MOCK_USER }; // Clone mock user
+    state.isAdmin = false;
     router();
 }
 
@@ -411,7 +537,7 @@ function renderSignIn(container) {
                         <div class="flex-grow border-t border-gray-700"></div>
                     </div>
 
-                    <form onsubmit="event.preventDefault(); login();" class="space-y-6">
+                    <form onsubmit="event.preventDefault(); login(this.querySelector('input[type=email]').value, this.querySelector('input[type=password]').value);" class="space-y-6">
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300">Email address</label>
                             <input type="email" class="w-full bg-bg-surface border border-gray-700 rounded-lg px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors" placeholder="python@example.com">
@@ -500,6 +626,9 @@ function renderDashboard(container) {
                     <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-400">
                         <a href="#/dashboard" class="text-white">Home</a>
                         <a href="#/roadmap" class="hover:text-brand transition-colors">Roadmap</a>
+                        <a href="#/notes" class="hover:text-brand transition-colors">Notes</a>
+                        <a href="#/theory" class="hover:text-brand transition-colors">Theory</a>
+                        <a href="#/practice" class="hover:text-brand transition-colors">Practice</a>
                         <a href="#/battles" class="hover:text-brand transition-colors">Battles</a>
                         <a href="#/games" class="hover:text-brand transition-colors">Games</a>
                         <a href="app.html" class="hover:text-brand transition-colors flex items-center gap-1">Playground <span class="text-xs">↗</span></a>
@@ -941,17 +1070,17 @@ function renderMobileNav() {
                 <span class="text-xl">🏠</span>
                 <span class="text-[10px]">Home</span>
             </a>
-            <a href="#/roadmap" class="flex flex-col items-center gap-1 text-brand">
-                <span class="text-xl">🗺️</span>
+            <a href="#/theory" class="flex flex-col items-center gap-1 text-brand">
+                <span class="text-xl">📚</span>
                 <span class="text-[10px]">Learn</span>
             </a>
-            <a href="#/battles" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
-                <span class="text-xl">⚔️</span>
-                <span class="text-[10px]">Battle</span>
+            <a href="#/practice" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                <span class="text-xl">💻</span>
+                <span class="text-[10px]">Practice</span>
             </a>
-            <a href="app.html" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
-                <span class="text-xl">🐍</span>
-                <span class="text-[10px]">Code</span>
+            <a href="#/games" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
+                <span class="text-xl">🎮</span>
+                <span class="text-[10px]">Play</span>
             </a>
             <a href="#/profile" class="flex flex-col items-center gap-1 text-gray-500 hover:text-white">
                 <span class="text-xl">👤</span>
@@ -1153,7 +1282,10 @@ function renderBattles(container) {
                         <h3 class="text-xl font-bold mb-2">1v1 Quick Battle</h3>
                         <p class="text-gray-400 text-sm mb-4">Challenge anyone. Win 50 CC.</p>
                         <div class="text-xs text-green-400 mb-4">● 234 Online</div>
-                        <button onclick="startMatchmaking()" class="w-full bg-brand hover:bg-brand/90 text-white font-bold py-2 rounded-lg transition-colors">Find Opponent</button>
+                        <div class="flex gap-2">
+                            <button onclick="startMatchmaking()" class="flex-1 bg-brand hover:bg-brand/90 text-white font-bold py-2 rounded-lg transition-colors">Find Opponent</button>
+                            <button onclick="alert('Invite Link Copied: https://codesphere.io/battle/invite/123xyz')" class="bg-bg-surface hover:bg-white/10 border border-white/10 text-white font-bold px-3 rounded-lg" title="Invite Friend">🔗</button>
+                        </div>
                     </div>
 
                     <!-- Group -->
@@ -2209,6 +2341,241 @@ function renderLeaderboard(container) {
             </div>
         </div>
         ${renderMobileNav()}
+    `;
+}
+
+function renderNotes(container) {
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+                <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-6 block">← Back to Dashboard</a>
+                <div class="flex items-center justify-between mb-8">
+                    <h1 class="text-3xl font-bold font-display">Study Notes & Mind Maps</h1>
+                    <p class="text-gray-400">Download resources to boost your learning.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    ${NOTES_DATA.map(note => `
+                        <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all flex items-start gap-4">
+                            <div class="text-3xl">${note.type === 'pdf' ? '📄' : (note.type === 'image' ? '🖼️' : '📝')}</div>
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg mb-1">${note.title}</h3>
+                                <p class="text-xs text-gray-500 mb-4 uppercase">${note.type} • ${note.size}</p>
+                                <button onclick="alert('Downloading ${note.title}...')" class="text-brand font-bold text-sm hover:underline flex items-center gap-1">
+                                    <span>⬇</span> Download
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function renderTheory(container) {
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+                 <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-6 block">← Back to Dashboard</a>
+                <h1 class="text-3xl font-bold font-display mb-8">Theory Hub</h1>
+
+                <!-- Random Article -->
+                <div class="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-white/10 rounded-2xl p-8 mb-12 text-center">
+                    <h2 class="text-2xl font-bold mb-2">Feeling Lucky? 🎲</h2>
+                    <p class="text-gray-400 mb-6">Learn a random Python concept.</p>
+                    <button onclick="window.location.hash='#/topic/ch1-t1'" class="bg-white text-black font-bold px-8 py-3 rounded-full hover:bg-gray-200 transition-colors">
+                        Read Random Topic
+                    </button>
+                </div>
+
+                <!-- Browse by Level -->
+                <h2 class="text-xl font-bold mb-6 border-b border-white/5 pb-2">Browse by Level</h2>
+                <div class="space-y-4">
+                    ${ROADMAP_DATA.map(track => `
+                        <div class="bg-bg-card border border-white/5 rounded-xl p-6">
+                            <h3 class="font-bold text-lg text-brand mb-1">${track.title}</h3>
+                            <p class="text-sm text-gray-400 mb-4">${track.desc || 'Master these concepts.'}</p>
+                            <div class="grid md:grid-cols-2 gap-3">
+                                ${track.chapters.map(ch => `
+                                    <div class="bg-bg-surface p-3 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/10 cursor-pointer transition-colors">
+                                        📄 ${ch.title}
+                                    </div>
+                                `).join('')}
+                                ${track.chapters.length === 0 ? '<div class="text-xs text-gray-500 italic">Content coming soon...</div>' : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        ${renderMobileNav()}
+    `;
+}
+
+function renderPractice(container) {
+    // State for practice session
+    let currentQ = null;
+
+    const generateQuestion = (level) => {
+        let pool = PRACTICE_QUESTIONS;
+        if (level !== 'random') {
+            pool = PRACTICE_QUESTIONS.filter(q => q.level === level);
+        }
+
+        if (pool.length === 0) {
+            alert("No questions found for this level yet!");
+            return;
+        }
+
+        const randomIdx = Math.floor(Math.random() * pool.length);
+        currentQ = pool[randomIdx];
+        renderUI();
+    };
+
+    const renderUI = () => {
+        const questionArea = document.getElementById('practice-question');
+        if (questionArea) {
+             questionArea.innerHTML = currentQ ? `
+                <div class="animate-fade-in">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-brand/20 text-brand text-xs font-bold px-2 py-1 rounded uppercase">${currentQ.level}</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">${currentQ.text}</h3>
+                </div>
+            ` : '<div class="text-gray-500 italic">Select a difficulty to generate a question.</div>';
+        }
+    };
+
+    container.innerHTML = `
+        <div class="h-screen flex flex-col bg-bg-deep overflow-hidden">
+            <!-- Header -->
+            <header class="bg-bg-card border-b border-white/5 h-16 flex items-center px-6 justify-between shrink-0">
+                <a href="#/dashboard" class="text-gray-400 hover:text-white">← Exit</a>
+                <h1 class="font-bold text-xl">🐍 Practice Arena</h1>
+                <div class="w-8"></div>
+            </header>
+
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Sidebar Control -->
+                <div class="w-64 bg-bg-card border-r border-white/5 p-6 flex flex-col gap-6 overflow-y-auto">
+                    <div>
+                        <h3 class="font-bold text-gray-400 text-sm uppercase tracking-wider mb-4">Generate Question</h3>
+                        <div class="space-y-2">
+                            <button onclick="window.genQ('random')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🎲 Random</button>
+                            <button onclick="window.genQ('level0')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">👶 Level 0</button>
+                            <button onclick="window.genQ('beginner')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🌱 Beginner</button>
+                            <button onclick="window.genQ('intermediate')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🔥 Intermediate</button>
+                            <button onclick="window.genQ('advanced')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🚀 Advanced</button>
+                            <button onclick="window.genQ('master')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">👑 Master</button>
+                            <button onclick="window.genQ('specialist')" class="w-full text-left bg-bg-surface hover:bg-brand hover:text-white text-gray-300 py-2 px-3 rounded transition-colors text-sm">🎓 Specialist</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Editor Area -->
+                <div class="flex-1 flex flex-col bg-[#1e1e1e]">
+                    <!-- Question Display -->
+                    <div id="practice-question" class="bg-bg-deep border-b border-white/10 p-6 min-h-[120px] flex flex-col justify-center">
+                        <div class="text-gray-500 italic">Select a difficulty to generate a question.</div>
+                    </div>
+
+                    <!-- Editor -->
+                    <div class="flex-1 relative">
+                        <textarea class="absolute inset-0 bg-transparent text-gray-300 p-6 font-mono resize-none outline-none leading-relaxed text-sm" spellcheck="false" placeholder="# Write your solution here..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Expose to window
+    window.genQ = generateQuestion;
+}
+
+function renderAdminDashboard(container) {
+    container.innerHTML = `
+        <div class="min-h-screen bg-gray-900 pb-20">
+            <!-- Admin Header -->
+            <header class="bg-gray-800 border-b border-gray-700 h-16 flex items-center px-6 justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🛡️</span>
+                    <span class="font-bold text-lg text-white">Admin Panel</span>
+                </div>
+                <button onclick="logout()" class="text-sm text-gray-400 hover:text-white">Sign Out</button>
+            </header>
+
+            <main class="max-w-7xl mx-auto px-6 py-8">
+                <h1 class="text-3xl font-bold text-white mb-8">System Overview</h1>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Total Users</div>
+                        <div class="text-3xl font-bold text-white">${ADMIN_DATA.totalUsers.toLocaleString()}</div>
+                        <div class="text-green-400 text-sm mt-1">↑ 12% this week</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Active Battles</div>
+                        <div class="text-3xl font-bold text-white">${ADMIN_DATA.activeBattles}</div>
+                        <div class="text-green-400 text-sm mt-1">● Live now</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Est. Revenue</div>
+                        <div class="text-3xl font-bold text-gold">$${ADMIN_DATA.revenue.toLocaleString()}</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="text-gray-400 text-sm uppercase font-bold mb-2">Reports</div>
+                        <div class="text-3xl font-bold text-red-400">${ADMIN_DATA.reports}</div>
+                        <div class="text-red-400 text-sm mt-1">Needs attention</div>
+                    </div>
+                </div>
+
+                <!-- Management Sections -->
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- User Management -->
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+                        <h3 class="text-xl font-bold text-white mb-4">User Management</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between bg-gray-900 p-3 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-xs">U1</div>
+                                    <span class="text-white text-sm">user_123</span>
+                                </div>
+                                <button class="text-red-400 text-xs font-bold border border-red-400/30 px-3 py-1 rounded hover:bg-red-400/10">Ban User</button>
+                            </div>
+                            <div class="flex items-center justify-between bg-gray-900 p-3 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs">U2</div>
+                                    <span class="text-white text-sm">python_pro</span>
+                                </div>
+                                <button class="text-red-400 text-xs font-bold border border-red-400/30 px-3 py-1 rounded hover:bg-red-400/10">Ban User</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Management -->
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+                        <h3 class="text-xl font-bold text-white mb-4">Content Controls</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                + Add Challenge
+                            </button>
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                + Add Quiz Question
+                            </button>
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                📣 Send Notification
+                            </button>
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-lg font-bold transition-colors">
+                                ⚙️ System Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
     `;
 }
 
