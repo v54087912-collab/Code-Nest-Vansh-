@@ -97,10 +97,27 @@ const STORE_ITEMS = [
     { id: 'power-shield', name: 'Streak Shield', type: 'powerup', price: 20, icon: '🛡️', desc: 'Protect your streak for 1 day' }
 ];
 
+const GAMES_DATA = {
+    beginner: [
+        { id: 'pet', title: 'Virtual Pet', icon: '🐶', desc: 'Care for a pet with Python commands.', reward: 10, route: '#/game/pet' },
+        { id: 'traffic', title: 'Traffic Light', icon: '🚦', desc: 'Control traffic using if-else logic.', reward: 10, route: '#/game/traffic' }
+    ],
+    intermediate: [
+        { id: 'blocks', title: 'Code Blocks', icon: '🧱', desc: 'Drag & Drop code to solve puzzles.', reward: 15, route: '#/game/blocks' },
+        { id: 'guess', title: 'Guess Output', icon: '❓', desc: 'Predict the output of Python code.', reward: 15, route: '#/game/guess' },
+        { id: 'fill', title: 'Fill Blanks', icon: '🧩', desc: 'Complete missing code keywords.', reward: 15, route: '#/game/fill' }
+    ],
+    hardcore: [
+        { id: 'type-race', title: 'Type Race', icon: '⌨️', desc: 'Race against time and bots.', reward: 20, route: '#/game/type-race' },
+        { id: 'bug-buster', title: 'Bug Buster', icon: '🐛', desc: 'Find and fix bugs in complex code.', reward: 20, route: '#/game/bug-buster' }
+    ]
+};
+
 // --- State Management ---
 const state = {
     user: null, // null if logged out
     currentTheme: 'dark',
+    activeGameTab: 'beginner',
 };
 
 // --- Router ---
@@ -148,6 +165,24 @@ function router() {
             break;
         case '#/game/type-race':
             requireAuth(() => renderGameTypeRace(app));
+            break;
+        case '#/game/pet':
+            requireAuth(() => renderGamePet(app));
+            break;
+        case '#/game/traffic':
+            requireAuth(() => renderGameTraffic(app));
+            break;
+        case '#/game/blocks':
+            requireAuth(() => renderGameBlocks(app));
+            break;
+        case '#/game/guess':
+            requireAuth(() => renderGameQuiz(app, 'guess'));
+            break;
+        case '#/game/fill':
+            requireAuth(() => renderGameQuiz(app, 'fill'));
+            break;
+        case '#/game/bug-buster':
+            requireAuth(() => renderGameBugBuster(app));
             break;
         case '#/store':
             requireAuth(() => renderStore(app));
@@ -1215,6 +1250,27 @@ function startMatchmaking() {
 }
 
 function renderGames(container) {
+    const user = state.user;
+    const activeTab = state.activeGameTab || 'beginner';
+
+    const getTabClass = (tab) => {
+        return activeTab === tab
+            ? 'bg-brand text-white shadow-lg shadow-brand/20'
+            : 'bg-bg-card border border-white/5 text-gray-400 hover:text-white hover:bg-bg-surface';
+    };
+
+    const gamesList = GAMES_DATA[activeTab] || [];
+
+    const gamesHtml = gamesList.map(game => `
+        <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group relative overflow-hidden animate-fade-in">
+            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">${game.icon}</div>
+            <h3 class="text-xl font-bold mb-2">${game.title}</h3>
+            <p class="text-gray-400 text-sm mb-4 h-10">${game.desc}</p>
+            <div class="text-xs text-gold mb-4">+${game.reward} CC for win</div>
+            <a href="${game.route}" class="block w-full text-center bg-brand hover:bg-brand/90 text-white font-bold py-2 rounded-lg transition-colors shadow-md">Play Now</a>
+        </div>
+    `).join('');
+
     container.innerHTML = `
         <div class="min-h-screen bg-bg-deep pb-20 pt-8 px-4 sm:px-6 lg:px-8">
             <div class="max-w-6xl mx-auto">
@@ -1222,41 +1278,37 @@ function renderGames(container) {
                     <div>
                         <a href="#/dashboard" class="text-gray-500 hover:text-white text-sm mb-2 block">← Back to Dashboard</a>
                         <h1 class="text-3xl font-bold font-display">Python Game Zone</h1>
+                        <p class="text-gray-400">Learn through play. Choose your difficulty.</p>
                     </div>
                 </div>
 
+                <!-- Difficulty Tabs -->
+                <div class="flex flex-wrap gap-4 mb-8">
+                    <button onclick="switchGameTab('beginner')" class="px-6 py-2 rounded-full text-sm font-bold transition-all ${getTabClass('beginner')}">
+                        Beginner
+                    </button>
+                    <button onclick="switchGameTab('intermediate')" class="px-6 py-2 rounded-full text-sm font-bold transition-all ${getTabClass('intermediate')}">
+                        Intermediate
+                    </button>
+                    <button onclick="switchGameTab('hardcore')" class="px-6 py-2 rounded-full text-sm font-bold transition-all ${getTabClass('hardcore')}">
+                        Hardcore
+                    </button>
+                </div>
+
+                <!-- Games Grid -->
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Type Race -->
-                    <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group">
-                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">⌨️</div>
-                        <h3 class="text-xl font-bold mb-2">Type Race</h3>
-                        <p class="text-gray-400 text-sm mb-4">Race typing Python code. Improve your speed.</p>
-                        <div class="text-xs text-gold mb-4">+20 CC for win</div>
-                        <a href="#/game/type-race" class="block w-full text-center bg-brand hover:bg-brand/90 text-white font-bold py-2 rounded-lg transition-colors">Play Now</a>
-                    </div>
-
-                    <!-- Bug Buster -->
-                    <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group">
-                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🐛</div>
-                        <h3 class="text-xl font-bold mb-2">Bug Buster</h3>
-                        <p class="text-gray-400 text-sm mb-4">Find & fix bugs in time. Don't let them escape!</p>
-                        <div class="text-xs text-gold mb-4">+10 CC per bug</div>
-                        <button disabled class="w-full bg-bg-surface border border-white/10 text-gray-500 font-bold py-2 rounded-lg cursor-not-allowed">Coming Soon</button>
-                    </div>
-
-                    <!-- Quiz Battle -->
-                    <div class="bg-bg-card border border-white/5 rounded-xl p-6 hover:border-brand/50 transition-all group">
-                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🧠</div>
-                        <h3 class="text-xl font-bold mb-2">Quiz Battle</h3>
-                        <p class="text-gray-400 text-sm mb-4">Real-time Python quiz duels.</p>
-                        <div class="text-xs text-gold mb-4">+15 CC for win</div>
-                        <button disabled class="w-full bg-bg-surface border border-white/10 text-gray-500 font-bold py-2 rounded-lg cursor-not-allowed">Coming Soon</button>
-                    </div>
+                    ${gamesHtml}
                 </div>
             </div>
         </div>
         ${renderMobileNav()}
     `;
+}
+
+function switchGameTab(tab) {
+    state.activeGameTab = tab;
+    const app = document.getElementById('app');
+    renderGames(app);
 }
 
 function renderGameTypeRace(container) {
@@ -1340,6 +1392,572 @@ function renderGameTypeRace(container) {
             clearInterval(botInterval);
         }
     }, 500);
+}
+
+function renderGamePet(container) {
+    // Pet State (local to this render, reset on exit for now)
+    let petState = {
+        hunger: 50, // 0-100 (100 is full)
+        happiness: 50, // 0-100 (100 is happy)
+        energy: 50, // 0-100 (100 is energetic)
+        status: 'neutral' // happy, sleeping, eating
+    };
+
+    const updateUI = () => {
+        const hungerBar = document.getElementById('pet-hunger');
+        const happinessBar = document.getElementById('pet-happiness');
+        const energyBar = document.getElementById('pet-energy');
+        const petEmoji = document.getElementById('pet-emoji');
+
+        if (hungerBar) hungerBar.style.width = `${petState.hunger}%`;
+        if (happinessBar) happinessBar.style.width = `${petState.happiness}%`;
+        if (energyBar) energyBar.style.width = `${petState.energy}%`;
+
+        if (petEmoji) {
+            if (petState.status === 'eating') petEmoji.innerText = '🍖';
+            else if (petState.status === 'playing') petEmoji.innerText = '🎾';
+            else if (petState.status === 'sleeping') petEmoji.innerText = '💤';
+            else if (petState.happiness > 80) petEmoji.innerText = '😄';
+            else if (petState.hunger < 20) petEmoji.innerText = '🥺';
+            else petEmoji.innerText = '🐶';
+        }
+    };
+
+    const handleCommand = (cmd) => {
+        const petEmoji = document.getElementById('pet-emoji');
+        if(petEmoji) {
+            petEmoji.classList.add('animate-bounce');
+            setTimeout(() => petEmoji.classList.remove('animate-bounce'), 1000);
+        }
+
+        if (cmd === 'feed') {
+            petState.hunger = Math.min(100, petState.hunger + 20);
+            petState.status = 'eating';
+        } else if (cmd === 'play') {
+            petState.happiness = Math.min(100, petState.happiness + 20);
+            petState.energy = Math.max(0, petState.energy - 10);
+            petState.status = 'playing';
+        } else if (cmd === 'sleep') {
+            petState.energy = Math.min(100, petState.energy + 30);
+            petState.status = 'sleeping';
+        }
+
+        updateUI();
+        setTimeout(() => {
+            petState.status = 'neutral';
+            updateUI();
+        }, 1500);
+
+        // Check for "Win" condition (all stats high)
+        if (petState.hunger > 90 && petState.happiness > 90 && petState.energy > 90) {
+            // alert("You're a great pet owner! +10 CC"); // Alert is annoying in tests
+            // state.user.cc += 10;
+        }
+    };
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="absolute top-4 left-4 z-20">
+                <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+            </div>
+
+            <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-md w-full text-center relative z-10 shadow-2xl animate-fade-in">
+                <h2 class="text-3xl font-bold font-display mb-2">My Python Pet</h2>
+                <p class="text-gray-400 text-sm mb-6">Use Python commands to care for your pet.</p>
+
+                <div class="bg-bg-surface rounded-xl p-8 mb-6 h-48 flex items-center justify-center text-6xl transition-all" id="pet-container">
+                    <div id="pet-emoji" class="transition-transform duration-500">🐶</div>
+                </div>
+
+                <!-- Stats -->
+                <div class="space-y-3 mb-8">
+                    <div class="flex items-center gap-3 text-xs font-bold text-gray-400 uppercase">
+                        <span class="w-16 text-right">Hunger</span>
+                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div id="pet-hunger" class="bg-green-500 h-full w-1/2 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs font-bold text-gray-400 uppercase">
+                        <span class="w-16 text-right">Happy</span>
+                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div id="pet-happiness" class="bg-yellow-500 h-full w-1/2 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs font-bold text-gray-400 uppercase">
+                        <span class="w-16 text-right">Energy</span>
+                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div id="pet-energy" class="bg-blue-500 h-full w-1/2 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="window.handlePetCommand('feed')" class="bg-bg-surface hover:bg-green-500/20 border border-green-500/50 text-green-400 font-mono font-bold py-3 rounded-lg transition-all hover:scale-105">
+                        pet.feed()
+                    </button>
+                    <button onclick="window.handlePetCommand('play')" class="bg-bg-surface hover:bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 font-mono font-bold py-3 rounded-lg transition-all hover:scale-105">
+                        pet.play()
+                    </button>
+                    <button onclick="window.handlePetCommand('sleep')" class="bg-bg-surface hover:bg-blue-500/20 border border-blue-500/50 text-blue-400 font-mono font-bold py-3 rounded-lg transition-all hover:scale-105">
+                        pet.sleep()
+                    </button>
+                </div>
+            </div>
+
+            <!-- Character Guide -->
+            <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                    "Keep your pet happy! Use functions to interact with objects."
+                </div>
+                <div class="text-4xl">🐍</div>
+            </div>
+        </div>
+    `;
+
+    // Expose handler to window for onclick
+    window.handlePetCommand = handleCommand;
+
+    // Initial UI Update
+    setTimeout(updateUI, 0);
+}
+
+function renderGameTraffic(container) {
+    let currentLight = 'red';
+
+    const checkLogic = (userAction) => {
+        const feedback = document.getElementById('traffic-feedback');
+        if ((currentLight === 'red' && userAction === 'stop') ||
+            (currentLight === 'green' && userAction === 'go') ||
+            (currentLight === 'yellow' && userAction === 'slow')) {
+            feedback.innerText = "✅ Correct! Good logic.";
+            feedback.className = "text-green-400 font-bold mt-4 animate-bounce";
+            state.user.cc += 2;
+        } else {
+            feedback.innerText = "❌ Crash! Wrong logic.";
+            feedback.className = "text-red-400 font-bold mt-4 animate-shake";
+        }
+
+        // Cycle light after delay
+        setTimeout(() => {
+            const colors = ['red', 'yellow', 'green'];
+            currentLight = colors[(colors.indexOf(currentLight) + 1) % 3];
+            updateTrafficUI();
+            feedback.innerText = "";
+        }, 1500);
+    };
+
+    const updateTrafficUI = () => {
+        const r = document.getElementById('light-red');
+        const y = document.getElementById('light-yellow');
+        const g = document.getElementById('light-green');
+        const codeHint = document.getElementById('code-condition');
+
+        if(r) r.className = `w-16 h-16 rounded-full transition-all duration-300 ${currentLight === 'red' ? 'bg-red-500 shadow-[0_0_20px_red]' : 'bg-red-900/30'}`;
+        if(y) y.className = `w-16 h-16 rounded-full transition-all duration-300 ${currentLight === 'yellow' ? 'bg-yellow-400 shadow-[0_0_20px_yellow]' : 'bg-yellow-900/30'}`;
+        if(g) g.className = `w-16 h-16 rounded-full transition-all duration-300 ${currentLight === 'green' ? 'bg-green-500 shadow-[0_0_20px_lime]' : 'bg-green-900/30'}`;
+
+        // Update Code Hint
+        if(codeHint) codeHint.innerText = `if light == '${currentLight}':`;
+    };
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+             <div class="absolute top-4 left-4 z-20">
+                <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-12 items-center animate-fade-in">
+                <!-- Traffic Light Visual -->
+                <div class="bg-gray-800 p-6 rounded-3xl border-4 border-gray-700 shadow-2xl flex flex-col gap-4">
+                    <div id="light-red" class="w-16 h-16 rounded-full bg-red-500 shadow-[0_0_20px_red]"></div>
+                    <div id="light-yellow" class="w-16 h-16 rounded-full bg-yellow-900/30"></div>
+                    <div id="light-green" class="w-16 h-16 rounded-full bg-green-900/30"></div>
+                </div>
+
+                <!-- Code Interface -->
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+                    <h2 class="text-2xl font-bold font-display mb-4">Traffic Logic</h2>
+                    <div class="bg-bg-surface p-4 rounded-lg font-mono text-sm mb-6">
+                        <div class="text-purple-400">def</div> <span class="text-blue-400">check_traffic</span>(light):<br>
+                        &nbsp;&nbsp;<span id="code-condition" class="text-pink-400">if light == 'red':</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-gray-500"># What should we do?</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3">
+                        <button onclick="window.handleTrafficAction('stop')" class="bg-bg-surface hover:bg-red-500/20 border border-red-500/50 text-red-400 font-mono font-bold py-3 rounded-lg transition-all text-left px-4 group">
+                            <span class="opacity-50 group-hover:opacity-100 mr-2">➜</span> action = "Stop"
+                        </button>
+                        <button onclick="window.handleTrafficAction('slow')" class="bg-bg-surface hover:bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 font-mono font-bold py-3 rounded-lg transition-all text-left px-4 group">
+                            <span class="opacity-50 group-hover:opacity-100 mr-2">➜</span> action = "Slow Down"
+                        </button>
+                        <button onclick="window.handleTrafficAction('go')" class="bg-bg-surface hover:bg-green-500/20 border border-green-500/50 text-green-400 font-mono font-bold py-3 rounded-lg transition-all text-left px-4 group">
+                            <span class="opacity-50 group-hover:opacity-100 mr-2">➜</span> action = "Go"
+                        </button>
+                    </div>
+
+                    <div id="traffic-feedback" class="h-6 mt-4 text-center"></div>
+                </div>
+            </div>
+             <!-- Character Guide -->
+            <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                    "If statements help programs make decisions based on conditions!"
+                </div>
+                <div class="text-4xl">🐍</div>
+            </div>
+        </div>
+    `;
+
+    window.handleTrafficAction = checkLogic;
+}
+
+function renderGameBlocks(container) {
+    // Puzzle Data (Mock one level)
+    const puzzle = {
+        title: "Print Loop",
+        desc: "Arrage the blocks to print numbers 1 to 5.",
+        blocks: [
+            { id: 'b1', text: 'print(i)' },
+            { id: 'b2', text: 'for i in range(1, 6):' },
+            { id: 'b3', text: 'i = 0' }, // distractor
+        ],
+        solution: ['b2', 'b1']
+    };
+
+    // State (closure)
+    let workspace = [];
+    let available = [...puzzle.blocks]; // Clone
+
+    const updateUI = () => {
+        const workspaceDiv = document.getElementById('workspace-area');
+        const availableDiv = document.getElementById('available-area');
+        // Check if elements exist (might have navigated away)
+        if(!workspaceDiv || !availableDiv) return;
+
+        // Render Workspace
+        workspaceDiv.innerHTML = workspace.length === 0
+            ? '<div class="text-gray-500 italic text-center py-8">Tap blocks to add them here</div>'
+            : workspace.map((block, index) => `
+                <div onclick="window.removeBlock(${index})" class="bg-bg-surface border border-brand/50 text-white p-3 rounded-lg mb-2 cursor-pointer hover:bg-red-900/20 transition-colors font-mono shadow-sm flex items-center justify-between group animate-fade-in">
+                    <span>${block.text}</span>
+                    <span class="text-xs text-red-400 opacity-0 group-hover:opacity-100">✕</span>
+                </div>
+            `).join('');
+
+        // Render Available
+        availableDiv.innerHTML = available.map((block, index) => `
+            <div onclick="window.addBlock(${index})" class="bg-bg-card border border-white/10 text-gray-300 p-3 rounded-lg mb-2 cursor-pointer hover:bg-brand/20 hover:text-white transition-colors font-mono shadow-sm">
+                ${block.text}
+            </div>
+        `).join('');
+    };
+
+    window.addBlock = (index) => {
+        const block = available.splice(index, 1)[0];
+        workspace.push(block);
+        updateUI();
+        const fb = document.getElementById('blocks-feedback');
+        if(fb) fb.innerText = "";
+    };
+
+    window.removeBlock = (index) => {
+        const block = workspace.splice(index, 1)[0];
+        available.push(block);
+        updateUI();
+        const fb = document.getElementById('blocks-feedback');
+        if(fb) fb.innerText = "";
+    };
+
+    window.checkBlocks = () => {
+        const currentIds = workspace.map(b => b.id);
+        const feedback = document.getElementById('blocks-feedback');
+
+        // Check exact match
+        if (JSON.stringify(currentIds) === JSON.stringify(puzzle.solution)) {
+            feedback.innerHTML = "✅ Correct! Loop built successfully.";
+            feedback.className = "text-green-400 font-bold mt-4 animate-bounce";
+            state.user.cc += 15;
+            // Disable further edits or show next level button (mock)
+        } else {
+            feedback.innerHTML = "❌ Not quite. Check order & indentation.";
+            feedback.className = "text-red-400 font-bold mt-4 animate-shake";
+        }
+    };
+
+    container.innerHTML = `
+        <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+             <div class="absolute top-4 left-4 z-20">
+                <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+            </div>
+
+            <div class="max-w-4xl w-full grid md:grid-cols-2 gap-8 p-6 animate-fade-in z-10">
+                <!-- Available Blocks (Toolbox) -->
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold font-display mb-4 text-gray-400">Toolbox</h3>
+                    <div id="available-area" class="space-y-2 min-h-[300px]"></div>
+                </div>
+
+                <!-- Workspace -->
+                <div class="bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-6 relative">
+                     <h3 class="text-xl font-bold font-display mb-4 text-brand">Workspace</h3>
+                     <div id="workspace-area" class="space-y-2 min-h-[300px]"></div>
+
+                     <!-- Run Button -->
+                     <button onclick="window.checkBlocks()" class="absolute bottom-6 right-6 bg-green-500 hover:bg-green-600 text-black font-bold py-3 px-8 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
+                        <span>▶</span> Run Code
+                     </button>
+                </div>
+            </div>
+
+            <div id="blocks-feedback" class="text-center h-8 font-bold text-xl z-10"></div>
+
+             <!-- Character Guide -->
+            <div class="absolute bottom-4 left-4 flex items-end gap-2 animate-fade-in">
+                <div class="text-4xl">🤖</div>
+                <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-bl-none text-xs max-w-[200px] text-gray-300">
+                    "Order matters! Computers execute code line by line."
+                </div>
+            </div>
+        </div>
+    `;
+
+    setTimeout(updateUI, 0);
+}
+
+function renderGameQuiz(container, mode) { // mode: 'guess' or 'fill'
+    const QUESTIONS = {
+        guess: [
+            {
+                q: "What is the output?",
+                code: "print(2 + 2 * 3)",
+                options: ["8", "12", "10", "Error"],
+                answer: "8"
+            },
+            {
+                q: "What does len() do?",
+                code: "print(len('Hello'))",
+                options: ["Prints 'Hello'", "Returns 5", "Returns 1", "Error"],
+                answer: "Returns 5"
+            }
+        ],
+        fill: [
+            {
+                q: "Complete the loop.",
+                code: "___ i in range(5):\n    print(i)",
+                answer: "for"
+            },
+            {
+                q: "Define a function.",
+                code: "___ my_func():\n    return True",
+                answer: "def"
+            }
+        ]
+    };
+
+    let currentQ = 0;
+    const questions = QUESTIONS[mode];
+
+    const renderQuestion = () => {
+        if (currentQ >= questions.length) {
+            container.innerHTML = `
+                <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center text-center">
+                    <h2 class="text-4xl font-bold text-gold mb-4">Quiz Complete! 🏆</h2>
+                    <p class="text-gray-300 mb-8">You mastered this section.</p>
+                    <a href="#/games" class="bg-brand text-white px-8 py-3 rounded-lg font-bold">Back to Games</a>
+                </div>
+            `;
+            return;
+        }
+
+        const q = questions[currentQ];
+        const isGuess = mode === 'guess';
+
+        let inputArea = '';
+        if (isGuess) {
+            inputArea = `
+                <div class="grid grid-cols-2 gap-4">
+                    ${q.options.map(opt => `
+                        <button onclick="window.checkQuizAnswer('${opt}')" class="bg-bg-surface hover:bg-white/10 border border-white/10 text-white font-bold py-4 rounded-lg transition-colors">
+                            ${opt}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            inputArea = `
+                <div class="flex gap-4">
+                    <input type="text" id="fill-input" class="flex-1 bg-bg-surface border border-brand rounded-lg p-4 text-white font-mono outline-none focus:ring-2 focus:ring-brand" placeholder="Type answer...">
+                    <button onclick="window.checkQuizAnswer(document.getElementById('fill-input').value)" class="bg-brand hover:bg-brand/90 text-white px-8 rounded-lg font-bold">Check</button>
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+                 <div class="absolute top-4 left-4 z-20">
+                    <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+                </div>
+
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate-fade-in relative z-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Question ${currentQ + 1}/${questions.length}</span>
+                        <span class="text-brand font-bold text-sm">${mode === 'guess' ? 'Guess Output' : 'Fill Blanks'}</span>
+                    </div>
+
+                    <h2 class="text-2xl font-bold font-display mb-6">${q.q}</h2>
+
+                    <div class="bg-gray-900 rounded-lg p-6 mb-8 border border-white/5 font-mono text-lg text-gray-300 relative">
+                        ${q.code.replace(/\n/g, '<br>')}
+                    </div>
+
+                    ${inputArea}
+
+                    <div id="quiz-feedback" class="h-6 mt-4 text-center font-bold"></div>
+                </div>
+
+                <!-- Character Guide -->
+                <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                    <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                        ${mode === 'guess' ? '"Analyze the code step by step!"' : '"Fill in the missing Python keyword."'}
+                    </div>
+                    <div class="text-4xl">🤔</div>
+                </div>
+            </div>
+        `;
+    };
+
+    window.checkQuizAnswer = (ans) => {
+        const q = questions[currentQ];
+        const feedback = document.getElementById('quiz-feedback');
+
+        // Normalize for fill-in (trim, lowercase)
+        const isCorrect = mode === 'guess'
+            ? ans === q.answer
+            : ans.trim().toLowerCase() === q.answer.toLowerCase();
+
+        if (isCorrect) {
+            feedback.innerText = "✅ Correct!";
+            feedback.className = "text-green-400 mt-4 animate-bounce";
+            state.user.cc += 15;
+            setTimeout(() => {
+                currentQ++;
+                renderQuestion();
+            }, 1000);
+        } else {
+            feedback.innerText = "❌ Try Again!";
+            feedback.className = "text-red-400 mt-4 animate-shake";
+        }
+    };
+
+    renderQuestion();
+}
+
+function renderGameBugBuster(container) {
+    const bugs = [
+        {
+            code: `def calculate_sum(a, b)\n    return a + b`,
+            errorLine: 0,
+            fixOptions: ["def calculate_sum(a, b):", "func calculate_sum(a, b)", "define calculate_sum(a, b)"],
+            correctFix: "def calculate_sum(a, b):",
+            desc: "Syntax Error: Missing colon"
+        },
+        {
+            code: `x = 10\nif x = 10:\n    print("Equal")`,
+            errorLine: 1,
+            fixOptions: ["if x == 10:", "if x is 10:", "if x equals 10"],
+            correctFix: "if x == 10:",
+            desc: "Syntax Error: Assignment vs Comparison"
+        }
+    ];
+
+    let currentBug = 0;
+
+    const renderBug = () => {
+        if (currentBug >= bugs.length) {
+            container.innerHTML = `
+                <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center text-center">
+                    <h2 class="text-4xl font-bold text-gold mb-4">All Bugs Squashed! 🐛🚫</h2>
+                    <p class="text-gray-300 mb-8">Great debugging skills.</p>
+                    <a href="#/games" class="bg-brand text-white px-8 py-3 rounded-lg font-bold">Back to Games</a>
+                </div>
+            `;
+            return;
+        }
+
+        const b = bugs[currentBug];
+        const lines = b.code.split('\n');
+
+        container.innerHTML = `
+             <div class="min-h-screen bg-bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+                 <div class="absolute top-4 left-4 z-20">
+                    <a href="#/games" class="text-gray-400 hover:text-white flex items-center gap-2">← Back to Games</a>
+                </div>
+
+                <div class="bg-bg-card border border-white/5 rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate-fade-in relative z-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-brand font-bold text-sm">🐛 Bug Buster</span>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Level ${currentBug + 1}</span>
+                    </div>
+
+                    <h2 class="text-2xl font-bold font-display mb-2">Find the Bug</h2>
+                    <p class="text-gray-400 text-sm mb-6">${b.desc}</p>
+
+                    <div class="bg-gray-900 rounded-lg p-6 mb-8 border border-white/5 font-mono text-lg text-gray-300 relative">
+                        ${lines.map((line, idx) => `
+                            <div class="flex gap-4 group cursor-pointer hover:bg-white/5 p-1 rounded" onclick="window.fixBug(${idx})">
+                                <span class="text-gray-600 select-none w-6 text-right">${idx + 1}</span>
+                                <span class="${idx === b.errorLine ? 'text-red-300 decoration-wavy underline decoration-red-500' : ''}">${line}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div id="bug-fix-area"></div>
+                </div>
+
+                <!-- Character Guide -->
+                <div class="absolute bottom-4 right-4 flex items-end gap-2 animate-fade-in">
+                    <div class="bg-white/10 backdrop-blur p-3 rounded-lg rounded-br-none text-xs max-w-[200px] text-gray-300">
+                        "Read the error message carefully! Tap the line to fix it."
+                    </div>
+                    <div class="text-4xl">🕵️‍♀️</div>
+                </div>
+            </div>
+        `;
+    };
+
+    window.fixBug = (lineIdx) => {
+        const b = bugs[currentBug];
+        if (lineIdx !== b.errorLine) {
+            alert("That line looks okay!");
+            return;
+        }
+
+        const fixArea = document.getElementById('bug-fix-area');
+        fixArea.innerHTML = `
+            <h3 class="font-bold text-white mb-2">How to fix line ${lineIdx + 1}?</h3>
+            <div class="space-y-2">
+                ${b.fixOptions.map(opt => `
+                    <button onclick="window.applyFix('${opt.replace(/'/g, "\\'")}')" class="w-full text-left bg-bg-surface hover:bg-brand/20 border border-white/10 p-3 rounded font-mono text-sm transition-colors">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+    };
+
+    window.applyFix = (fix) => {
+        const b = bugs[currentBug];
+        if (fix === b.correctFix) {
+             state.user.cc += 20;
+             currentBug++;
+             renderBug();
+        } else {
+            alert("Not quite right. Try again!");
+        }
+    };
+
+    renderBug();
 }
 
 function renderStore(container) {
