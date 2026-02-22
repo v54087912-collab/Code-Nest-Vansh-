@@ -4,6 +4,7 @@ const CACHE_NAME = 'pymobile-v13';
 // 1. App Shell (Local Files) - Precache these immediately
 const APP_SHELL = [
     './',
+    './app.html',
     './index.html',
     './css/style.css',
     './css/themes.css',
