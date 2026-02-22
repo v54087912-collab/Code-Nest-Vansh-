@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
-    <title>PyMobile Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSphere Python - Learn, Battle, Earn</title>
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Tailwind CSS -->
     <script src="./js/tailwindcss.js"></script>
@@ -12,556 +15,180 @@
             theme: {
                 extend: {
                     colors: {
-                        dark: 'var(--color-dark)',
-                        darker: 'var(--color-darker)',
-                        accent: 'var(--color-accent)',
-                        accentHover: 'var(--color-accent-hover)',
-                        surface: 'var(--color-surface)',
-                        border: 'var(--color-border)',
-                        text: 'var(--color-text)',
-                        muted: 'var(--color-text-muted)',
-                        hoverBg: 'var(--color-hover-bg)'
+                        deep: '#0c2218',
+                        card: '#14452f',
+                        surface: '#1a3d2b',
+                        brand: '#2bba60',
+                        brandDim: '#2bba6033',
+                        gold: '#FFC000',
+                        goldDim: '#FFC00033',
+                        textPrimary: '#e8f5ee',
+                        textMuted: '#7db892',
+                        textDim: '#4a7a5a',
+                        error: '#ff4d4d',
+                        info: '#3b82f6'
                     },
                     fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
-                        sans: ['Inter', 'sans-serif']
+                        display: ['Space Grotesk', 'sans-serif']
+                    },
+                    animation: {
+                        float: 'float 6s ease-in-out infinite',
+                        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        shimmer: 'shimmer 2s linear infinite'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-1000px 0' },
+                            '100%': { backgroundPosition: '1000px 0' }
+                        }
                     }
                 }
             }
         }
     </script>
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
-
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="./css/themes.css">
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/error.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap');
 
-    <!-- PWA Manifest & Meta Tags -->
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="PyMobile">
-    <link rel="icon" type="image/png" href="./assets/icon-192.png">
-    <link rel="apple-touch-icon" href="./assets/icon-192.png">
+        body {
+            background-color: var(--color-deep);
+            color: var(--color-text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0c2218; }
+        ::-webkit-scrollbar-thumb { background: #1a3d2b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2bba60; }
+
+        .glass {
+            background: rgba(20, 69, 47, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(43, 186, 96, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-darker text-text font-sans h-screen flex flex-col overflow-hidden select-none">
+<body class="bg-deep text-textPrimary min-h-screen flex flex-col overflow-x-hidden">
 
-    <!-- Loading View -->
-    <div id="view-loading" class="fixed inset-0 bg-black z-[90] flex flex-col items-center justify-center p-6 hidden">
-        <div class="relative w-16 h-16 mb-6">
-            <div class="absolute inset-0 border-4 border-surface rounded-full"></div>
-            <div class="absolute inset-0 border-4 border-accent rounded-full border-t-transparent animate-spin"></div>
-        </div>
-        <h2 class="text-xl font-bold text-white mb-2">Initializing Environment</h2>
-        <p id="loading-text" class="text-gray-400 text-sm">Loading Python Engine...</p>
-    </div>
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" onclick="window.location.hash = ''">
+                    <span class="text-3xl">🐍</span>
+                    <span class="font-display font-bold text-xl tracking-tight">CodeSphere</span>
+                </div>
 
-    <!-- Top App Bar -->
-    <header class="safe-top bg-dark flex items-center justify-between px-4 border-b border-border z-50 shrink-0 relative">
-        <!-- Left: Menu -->
-        <button id="btn-toggle-sidebar" class="w-10 h-10 flex items-center justify-center text-muted hover:text-text active:scale-95">
-            <i class="fa-solid fa-bars text-lg"></i>
-        </button>
-
-        <!-- Sidebar (Me Menu) -->
-        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-[60] hidden backdrop-blur-sm transition-opacity"></div>
-        <div id="sidebar-menu" class="fixed top-0 left-0 bottom-0 w-72 bg-surface z-[70] transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col border-r border-border">
-            <!-- Header -->
-            <div class="h-32 bg-gradient-to-br from-green-900 to-dark p-6 flex flex-col justify-end relative">
-                <button id="btn-close-sidebar" class="absolute top-4 right-4 text-white/50 hover:text-white">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-                <div class="flex items-center gap-4">
-                    <div id="sidebar-avatar-container" class="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-black font-bold text-xl shadow-lg overflow-hidden relative cursor-pointer group hover:opacity-90 active:scale-95 transition-all">
-                        <span id="sidebar-avatar-placeholder">ME</span>
-                        <img id="sidebar-avatar-img" src="" class="absolute inset-0 w-full h-full object-cover hidden" alt="User Avatar">
-                        <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-camera text-white text-xs"></i>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="font-bold text-text text-lg">User</div>
-                        <div class="text-xs text-green-400">Pro Member</div>
+                <!-- Desktop Menu -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="#/" class="hover:text-brand transition-colors px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="#/roadmap" class="hover:text-brand transition-colors px-3 py-2 rounded-md text-sm font-medium">Roadmap</a>
+                        <a href="#/battle" class="hover:text-brand transition-colors px-3 py-2 rounded-md text-sm font-medium">Battles</a>
+                        <a href="#/games" class="hover:text-brand transition-colors px-3 py-2 rounded-md text-sm font-medium">Games</a>
+                        <!-- Link to IDE -->
+                        <a href="./app.html" target="_blank" class="hover:text-brand transition-colors px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1">
+                            Playground <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                        </a>
                     </div>
                 </div>
-                <!-- Hidden Input -->
-                <input type="file" id="input-avatar-upload" accept="image/*" class="hidden">
-            </div>
 
-            <!-- Tools List -->
-            <div class="flex-1 overflow-y-auto py-2 pb-20">
-                <!-- Social Links -->
-                <div class="px-4 py-2 text-xs font-bold text-muted uppercase">Community</div>
-                <a href="https://t.me/R3V_X" target="_blank" class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors">
-                    <i class="fa-brands fa-telegram text-blue-400 w-5"></i> Developer
-                </a>
-                <a href="https://t.me/allinformation0173" target="_blank" class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors">
-                    <i class="fa-solid fa-users text-green-400 w-5"></i> Join Community
-                </a>
-                <a href="https://www.instagram.com/devxrev01/" target="_blank" class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors">
-                    <i class="fa-brands fa-instagram text-pink-500 w-5"></i> Follow Instagram
-                </a>
-                <div class="h-px bg-white/5 mx-4 my-2"></div>
-
-                <!-- Snippets -->
-                <div class="px-4 py-2 text-xs font-bold text-muted uppercase">Code Snippets</div>
-                <div id="snippets-list" class="grid grid-cols-2 gap-2 px-4 mb-2">
-                    <button class="bg-surface hover:bg-hoverBg border border-border rounded-lg py-2 px-3 text-xs text-text transition-colors text-left" onclick="window.cmdRunAction('insert-snippet', 'def')">
-                        <span class="text-accent">def</span> func
-                    </button>
-                    <button class="bg-surface hover:bg-hoverBg border border-border rounded-lg py-2 px-3 text-xs text-text transition-colors text-left" onclick="window.cmdRunAction('insert-snippet', 'for')">
-                        <span class="text-accent">for</span> loop
-                    </button>
-                    <button class="bg-surface hover:bg-hoverBg border border-border rounded-lg py-2 px-3 text-xs text-text transition-colors text-left" onclick="window.cmdRunAction('insert-snippet', 'if')">
-                        <span class="text-accent">if</span>/else
-                    </button>
-                     <button class="bg-surface hover:bg-hoverBg border border-border rounded-lg py-2 px-3 text-xs text-text transition-colors text-left" onclick="window.cmdRunAction('insert-snippet', 'class')">
-                        <span class="text-accent">class</span>
-                    </button>
-                    <button class="bg-surface hover:bg-hoverBg border border-border rounded-lg py-2 px-3 text-xs text-text transition-colors text-left" onclick="window.cmdRunAction('insert-snippet', 'try')">
-                        <span class="text-accent">try</span>/except
-                    </button>
-                     <button class="bg-surface hover:bg-hoverBg border border-border rounded-lg py-2 px-3 text-xs text-text transition-colors text-left" onclick="window.cmdRunAction('insert-snippet', 'import')">
-                        <span class="text-accent">import</span>
-                    </button>
+                <!-- Auth Buttons -->
+                <div class="hidden md:flex items-center gap-4">
+                    <a href="#/signin" class="text-brand hover:text-white transition-colors text-sm font-bold border border-brand rounded-lg px-4 py-2">Sign In</a>
+                    <a href="#/signup" class="bg-brand hover:bg-green-500 text-black transition-colors text-sm font-bold rounded-lg px-4 py-2 shadow-lg shadow-brand/20">Start Free →</a>
                 </div>
-                <div class="h-px bg-white/5 mx-4 my-2"></div>
 
-                <!-- Editor Tools -->
-                <div class="px-4 py-2 text-xs font-bold text-muted uppercase">Edit</div>
-
-                <div class="grid grid-cols-2">
-                    <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('undo')">
-                        <i class="fa-solid fa-rotate-left w-5"></i> Undo
+                <!-- Mobile menu button -->
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none" aria-controls="mobile-menu" aria-expanded="false" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fa-solid fa-bars text-xl"></i>
                     </button>
-                    <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('redo')">
-                        <i class="fa-solid fa-rotate-right w-5"></i> Redo
-                    </button>
-                </div>
-                <div class="grid grid-cols-2">
-                    <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('copy-all')">
-                        <i class="fa-regular fa-copy w-5"></i> Copy All
-                    </button>
-                     <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('paste')">
-                        <i class="fa-solid fa-paste w-5"></i> Paste
-                    </button>
-                </div>
-                 <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('select-all')">
-                    <i class="fa-solid fa-check-double w-5"></i> Select All
-                </button>
-
-                <!-- Line Operations -->
-                <div class="h-px bg-white/5 mx-4 my-1"></div>
-                <div class="px-4 py-2 text-xs font-bold text-muted uppercase">Line Operations</div>
-
-                <div class="grid grid-cols-2">
-                     <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('duplicate-line')">
-                        <i class="fa-solid fa-clone w-5"></i> Duplicate
-                    </button>
-                    <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('delete-line')">
-                        <i class="fa-solid fa-trash-can w-5"></i> Delete
-                    </button>
-                </div>
-                <div class="grid grid-cols-2">
-                    <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('move-line-up')">
-                        <i class="fa-solid fa-arrow-up w-5"></i> Move Up
-                    </button>
-                    <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('move-line-down')">
-                        <i class="fa-solid fa-arrow-down w-5"></i> Move Down
-                    </button>
-                </div>
-                <div class="h-px bg-white/5 mx-4 my-1"></div>
-
-                <div class="px-4 py-2 text-xs font-bold text-muted uppercase">Code</div>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('comment')">
-                    <i class="fa-solid fa-comment-slash w-5"></i> Comment / Uncomment
-                </button>
-                 <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('format-pep8')">
-                    <i class="fa-solid fa-wand-magic-sparkles text-accent w-5"></i> Format Code (PEP-8)
-                </button>
-                 <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('format')">
-                    <i class="fa-solid fa-align-left w-5"></i> Auto Indent (Basic)
-                </button>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('find')">
-                    <i class="fa-solid fa-magnifying-glass w-5"></i> Find & Replace
-                </button>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('goto-line')">
-                    <i class="fa-solid fa-arrow-right-to-bracket w-5"></i> Go to Line
-                </button>
-                 <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('show-error')">
-                    <i class="fa-solid fa-triangle-exclamation text-red-400 w-5"></i> Show Next Error
-                </button>
-                <div class="h-px bg-white/5 mx-4 my-1"></div>
-
-                <div class="px-4 py-2 text-xs font-bold text-muted uppercase">Share & Export</div>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('download')">
-                    <i class="fa-solid fa-download text-accent w-5"></i> Download .py
-                </button>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('share')">
-                    <i class="fa-solid fa-share-nodes text-accent w-5"></i> Copy Share Link
-                </button>
-                <div class="h-px bg-white/5 mx-4 my-2"></div>
-
-                <div class="px-4 py-2 text-xs font-bold text-muted uppercase">Execution & Stats</div>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('restart')">
-                    <i class="fa-solid fa-power-off text-red-400 w-5"></i> Restart Program
-                </button>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('run-selected')">
-                    <i class="fa-solid fa-play w-5"></i> Run Selected Code
-                </button>
-                 <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('clear-console')">
-                    <i class="fa-solid fa-eraser w-5"></i> Clear Console
-                </button>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('stats')">
-                    <i class="fa-solid fa-chart-simple w-5"></i> Word Count
-                </button>
-                 <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('remove-extra-spaces')">
-                    <i class="fa-solid fa-broom w-5"></i> Remove Extra Spaces
-                </button>
-
-                 <!-- More -->
-                 <div class="h-px bg-white/5 mx-4 my-1"></div>
-                 <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('scroll-top')">
-                    <i class="fa-solid fa-arrow-up w-5"></i> Scroll to Top
-                </button>
-                <button class="w-full text-left px-6 py-3 hover:bg-hoverBg flex items-center gap-3 text-muted hover:text-text transition-colors" onclick="window.cmdRunAction('scroll-bottom')">
-                    <i class="fa-solid fa-arrow-down w-5"></i> Scroll to Bottom
-                </button>
-            </div>
-        </div>
-
-        <!-- Center: File Info -->
-        <div class="flex flex-col items-center">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-code text-accent text-xs"></i>
-                <span class="font-bold text-text text-sm" id="current-filename">main.py</span>
-            </div>
-            <span class="text-[10px] text-muted font-mono">/projects/calculator</span>
-        </div>
-
-        <!-- Right: Actions -->
-        <div class="flex items-center gap-3">
-            <button id="btn-run" onclick="window.cmdRunCode()" class="bg-accent hover:bg-accentHover text-black w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-green-900/20 active:scale-95 transition-all mr-2">
-                <i class="fa-solid fa-play text-sm"></i>
-            </button>
-            <button id="btn-undo" class="w-8 h-8 flex items-center justify-center text-muted hover:text-text active:scale-95 transition-colors">
-                <i class="fa-solid fa-rotate-left text-lg"></i>
-            </button>
-            <button id="btn-redo" class="w-8 h-8 flex items-center justify-center text-muted hover:text-text active:scale-95 transition-colors">
-                <i class="fa-solid fa-rotate-right text-lg"></i>
-            </button>
-            <button id="btn-clear-code" class="w-8 h-8 flex items-center justify-center text-muted hover:text-red-400 active:scale-95 ml-1 transition-colors">
-                <i class="fa-solid fa-trash-can text-lg"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Main Content Area (Swappable Views) -->
-    <main class="flex-1 relative overflow-hidden bg-darker">
-
-        <!-- View 1: Editor (Active by default) -->
-        <div id="view-editor" class="absolute inset-0 flex flex-col">
-            <!-- CodeMirror Container -->
-            <div id="editor-container" class="flex-1 relative font-mono text-sm overflow-hidden">
-                <!-- Editor mounts here -->
-            </div>
-
-
-            <!-- Console Output Pane (Collapsible Split View) -->
-            <div id="console-pane" class="h-1/3 min-h-[100px] max-h-[80%] bg-surface border-t border-border flex flex-col hidden transition-all duration-300">
-                <!-- Console Header -->
-                <div class="h-8 bg-[#252526] flex items-center justify-between px-3 border-b border-border select-none">
-                    <div class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                        <i class="fa-solid fa-terminal text-[10px]"></i>
-                        <span>Console Output</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button id="btn-clear-console" class="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded">
-                            <i class="fa-solid fa-trash-can text-[10px]"></i>
-                        </button>
-                        <button id="btn-minimize-console" class="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded">
-                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                        </button>
-                    </div>
-                </div>
-                <!-- Output -->
-                <div id="console-output" class="terminal-container">
-                    <div class="terminal-system">No output yet. Run your code to see results.</div>
-                </div>
-            </div>
-
-            <!-- Quick Keys Toolbar (Scrollable) -->
-            <div id="quick-keys" class="h-10 bg-surface border-t border-border flex items-center px-1 gap-1 overflow-x-auto whitespace-nowrap hide-scrollbar shrink-0 z-20">
-                <button class="key-btn" data-key="TAB">TAB</button>
-                <button class="key-btn" data-key="=">=</button>
-                <button class="key-btn" data-key="(">(</button>
-                <button class="key-btn" data-key=")">)</button>
-                <button class="key-btn" data-key=":">:</button>
-                <button class="key-btn" data-key='"'>"</button>
-                <button class="key-btn" data-key="'">'</button>
-                <button class="key-btn" data-key="[">[</button>
-                <button class="key-btn" data-key="]">]</button>
-                <button class="key-btn" data-key="#">#</button>
-                <button class="key-btn" data-key="{">{</button>
-                <button class="key-btn" data-key="}">}</button>
-                <button class="key-btn" data-key="+">+</button>
-                <button class="key-btn" data-key="-">-</button>
-                <button class="key-btn" data-key="*">*</button>
-                <button class="key-btn" data-key="/">/</button>
-            </div>
-        </div>
-
-        <!-- View 2: Files -->
-        <div id="view-files" class="absolute inset-0 bg-darker flex flex-col hidden">
-            <!-- Header -->
-            <div class="p-6 pb-2 bg-darker flex justify-between items-center z-10">
-                <h2 class="text-2xl font-bold text-text">File Explorer</h2>
-                <button id="btn-new-file" class="w-12 h-12 rounded-full bg-accent text-black flex items-center justify-center shadow-lg shadow-green-500/20 active:scale-95 transition-transform hover:bg-accentHover">
-                    <i class="fa-solid fa-plus text-xl"></i>
-                </button>
-            </div>
-
-            <!-- Breadcrumbs -->
-            <div class="px-6 mb-4 flex items-center text-sm text-gray-500 font-medium">
-                <i class="fa-solid fa-folder mr-2"></i>
-                <span class="mr-2">Projects</span>
-                <span class="mr-2 text-gray-600">/</span>
-                <span class="bg-green-900/20 text-accent px-3 py-1 rounded-full border border-green-900/30">MyPythonProject</span>
-            </div>
-
-            <!-- File List -->
-            <div id="file-list" class="flex-1 overflow-y-auto px-4 pb-20 space-y-3">
-                <!-- File items populated by JS -->
-            </div>
-        </div>
-
-        <!-- View 3: Terminal (Placeholder for now, could be same as console or interactive shell) -->
-        <div id="view-terminal" class="absolute inset-0 bg-black p-4 font-mono text-xs text-green-500 overflow-y-auto hidden">
-            <div class="mb-2">Python 3.11.2 (main, Pyodide v0.23.4)</div>
-            <div class="mb-2">[GCC 10.2.1 20210110] on webassembly/emscripten</div>
-            <div class="mb-2">Type "help", "copyright", "credits" or "license" for more information.</div>
-            <div class="flex gap-2">
-                <span class="text-blue-400">>>></span>
-                <span class="animate-pulse">_</span>
-            </div>
-            <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                <i class="fa-solid fa-terminal text-6xl"></i>
-            </div>
-        </div>
-
-        <!-- View 4: Settings -->
-        <div id="view-settings" class="absolute inset-0 bg-darker flex flex-col hidden overflow-y-auto pb-20">
-            <!-- Settings Header -->
-            <div class="p-4 flex items-center justify-between border-b border-border bg-dark sticky top-0 z-10">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-green-900/30 flex items-center justify-center text-accent">
-                        <i class="fa-solid fa-sliders"></i>
-                    </div>
-                    <span class="text-lg font-bold text-text">PyExec Settings</span>
-                </div>
-                <button class="w-8 h-8 flex items-center justify-center text-muted">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </button>
-            </div>
-
-            <!-- Group: Appearance -->
-            <div class="px-4 py-3 text-xs font-bold text-accent uppercase tracking-wider mt-2">Appearance</div>
-            <div class="space-y-1">
-                <div id="setting-theme" class="flex items-center justify-between px-4 py-3 bg-surface mx-4 rounded-t-xl hover:bg-hoverBg active:bg-black/20 cursor-pointer transition-colors">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-palette text-muted w-5"></i>
-                        <span>Theme</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs text-accent bg-green-900/20 px-2 py-1 rounded">
-                        <span id="current-theme-name">Monokai Dark</span>
-                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                    </div>
-                </div>
-                <div id="setting-font-size" class="flex items-center justify-between px-4 py-3 bg-surface mx-4 rounded-b-xl hover:bg-hoverBg active:bg-black/20 border-t border-border cursor-pointer transition-colors">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-text-height text-muted w-5"></i>
-                        <span>Font Size</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs text-muted">
-                        <span id="current-font-size">14px</span>
-                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Group: Editor -->
-            <div class="px-4 py-3 text-xs font-bold text-accent uppercase tracking-wider mt-2">Editor</div>
-            <div class="space-y-1">
-                <div id="setting-gutter-width" class="flex items-center justify-between px-4 py-3 bg-surface mx-4 rounded-t-xl hover:bg-hoverBg active:bg-black/20 cursor-pointer transition-colors">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-ruler-horizontal text-muted w-5"></i>
-                        <span>Gutter Width</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs text-muted">
-                        <span id="current-gutter-width">Compact</span>
-                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between px-4 py-3 bg-surface mx-4 border-t border-border transition-colors">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-code text-muted w-5"></i>
-                        <span>Syntax Highlighting</span>
-                    </div>
-                    <!-- Toggle Switch -->
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer" checked>
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                    </label>
-                </div>
-                <div class="flex items-center justify-between px-4 py-3 bg-surface mx-4 border-t border-border transition-colors">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-floppy-disk text-muted w-5"></i>
-                        <span>Auto-save</span>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer" checked>
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                    </label>
-                </div>
-                <div class="flex items-center justify-between px-4 py-3 bg-surface mx-4 rounded-b-xl border-t border-border transition-colors">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-list-ol text-muted w-5"></i>
-                        <span>Line Numbers</span>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer" checked>
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                    </label>
-                </div>
-            </div>
-
-             <!-- Group: Execution -->
-             <div class="px-4 py-3 text-xs font-bold text-accent uppercase tracking-wider mt-2">Execution</div>
-             <div class="space-y-1">
-                 <div class="flex items-center justify-between px-4 py-3 bg-surface mx-4 rounded-xl hover:bg-hoverBg active:bg-black/20 transition-colors">
-                     <div class="flex items-center gap-3">
-                         <i class="fa-brands fa-python text-muted w-5"></i>
-                         <span>Python Version</span>
-                     </div>
-                     <div class="flex items-center gap-2 text-xs text-accent">
-                         <span>3.11.2</span>
-                         <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                     </div>
-                 </div>
-            </div>
-
-            <!-- Library Manager Link (styled as setting) -->
-            <div class="px-4 py-3 text-xs font-bold text-accent uppercase tracking-wider mt-2">Packages</div>
-             <div class="space-y-1">
-                 <div id="btn-open-libs" class="flex items-center justify-between px-4 py-3 bg-surface mx-4 rounded-xl hover:bg-hoverBg active:bg-black/20 cursor-pointer transition-colors" onclick="window.uiSwitchView('view-libraries')">
-                     <div class="flex items-center gap-3">
-                         <i class="fa-solid fa-box-open text-muted w-5"></i>
-                         <span>Library Manager</span>
-                     </div>
-                     <div class="flex items-center gap-2 text-xs text-muted">
-                         <span>Manage Pip</span>
-                         <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                     </div>
-                 </div>
-            </div>
-        </div>
-
-        <!-- View 5: Library Manager -->
-        <div id="view-libraries" class="absolute inset-0 bg-darker flex flex-col hidden z-20">
-             <!-- Header -->
-            <div class="p-4 flex items-center justify-between border-b border-border bg-dark sticky top-0 z-10">
-                <div class="flex items-center gap-3">
-                    <button id="btn-back-settings" onclick="window.uiSwitchView('view-settings')" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted hover:text-text active:scale-95 transition-transform">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <span class="text-lg font-bold text-text">Library Manager</span>
-                </div>
-                <div class="text-xs text-muted">PyPI</div>
-            </div>
-
-            <!-- Search -->
-            <div class="p-4 bg-darker border-b border-border">
-                <div class="relative">
-                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm"></i>
-                    <input type="text" id="lib-search" placeholder="Search PyPI (e.g. pandas)..."
-                           class="w-full bg-surface border border-border rounded-xl pl-9 pr-20 py-3 text-sm text-text focus:outline-none focus:border-accent placeholder-gray-500 bg-opacity-10">
-                    <button id="btn-install-lib" class="absolute right-2 top-1/2 -translate-y-1/2 bg-accent text-black px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-accentHover transition-colors">
-                        Install
-                    </button>
-                </div>
-            </div>
-
-            <!-- List -->
-            <div id="lib-list" class="flex-1 overflow-y-auto p-4 space-y-3 pb-20">
-                <!-- Library items will be populated here -->
-                <div class="text-center text-muted text-xs mt-4">
-                    Popular libraries like numpy, pandas, and matplotlib are supported.
                 </div>
             </div>
         </div>
 
-    </main>
-
-    <!-- Bottom Navigation Bar -->
-    <nav class="safe-bottom bg-dark border-t border-border flex items-center justify-around shrink-0 z-50">
-        <button class="nav-btn active flex flex-col items-center gap-1 w-full h-full justify-center text-accent" data-target="view-editor">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center bg-green-900/20 icon-container transition-colors">
-                <i class="fa-solid fa-code text-lg"></i>
+        <!-- Mobile Menu -->
+        <div class="hidden md:hidden glass border-t border-white/5" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#/" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-surface">Home</a>
+                <a href="#/roadmap" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-surface">Roadmap</a>
+                <a href="#/battle" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-surface">Battles</a>
+                <a href="#/games" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-surface">Games</a>
+                <a href="./app.html" target="_blank" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-surface text-brand">Playground</a>
+                <div class="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2">
+                    <a href="#/signin" class="block text-center border border-brand text-brand py-2 rounded-lg font-bold">Sign In</a>
+                    <a href="#/signup" class="block text-center bg-brand text-black py-2 rounded-lg font-bold">Start Free</a>
+                </div>
             </div>
-            <span class="text-[10px] font-medium">Editor</span>
-        </button>
-        <button class="nav-btn flex flex-col items-center gap-1 w-full h-full justify-center text-muted hover:text-text transition-colors" data-target="view-files">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center icon-container transition-colors">
-                <i class="fa-regular fa-folder text-lg"></i>
-            </div>
-            <span class="text-[10px] font-medium">Files</span>
-        </button>
-        <button class="nav-btn flex flex-col items-center gap-1 w-full h-full justify-center text-muted hover:text-text transition-colors" data-target="view-settings">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center icon-container transition-colors">
-                <i class="fa-solid fa-gear text-lg"></i>
-            </div>
-            <span class="text-[10px] font-medium">Settings</span>
-        </button>
+        </div>
     </nav>
 
-    <!-- Modals (Hidden) -->
+    <!-- Main Content SPA Container -->
+    <main id="app" class="flex-1 pt-16">
+        <!-- Dynamic Content Injected Here -->
+        <div class="flex items-center justify-center h-[80vh]">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand"></div>
+        </div>
+    </main>
 
-    <!-- Selection Modal (Generic) -->
-    <div id="modal-selection" class="fixed inset-0 bg-black/80 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-surface w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-border flex flex-col max-h-[60vh]">
-            <div class="p-4 border-b border-border flex justify-between items-center bg-dark">
-                <h3 id="modal-selection-title" class="font-bold text-text">Select Option</h3>
-                <button id="btn-close-selection" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted hover:text-text">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+    <!-- Footer -->
+    <footer class="bg-card border-t border-white/5 py-12 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">🐍</span>
+                        <span class="font-display font-bold text-lg">CodeSphere</span>
+                    </div>
+                    <p class="text-textMuted text-sm">
+                        Master Python through games, battles & challenges. 100% Free forever.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white mb-4">Learn</h3>
+                    <ul class="space-y-2 text-sm text-textMuted">
+                        <li><a href="#/roadmap" class="hover:text-brand">Roadmap</a></li>
+                        <li><a href="#/challenges" class="hover:text-brand">Challenges</a></li>
+                        <li><a href="./app.html" target="_blank" class="hover:text-brand">Playground</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white mb-4">Community</h3>
+                    <ul class="space-y-2 text-sm text-textMuted">
+                        <li><a href="#/battle" class="hover:text-brand">Code Battles</a></li>
+                        <li><a href="#/leaderboard" class="hover:text-brand">Leaderboard</a></li>
+                        <li><a href="https://discord.gg/codesphere" class="hover:text-brand">Discord</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white mb-4">Legal</h3>
+                    <ul class="space-y-2 text-sm text-textMuted">
+                        <li><a href="#/privacy" class="hover:text-brand">Privacy Policy</a></li>
+                        <li><a href="#/terms" class="hover:text-brand">Terms of Service</a></li>
+                    </ul>
+                </div>
             </div>
-            <div id="modal-selection-list" class="flex-1 overflow-y-auto p-2 bg-darker space-y-1">
-                <!-- Items populated by JS -->
+            <div class="mt-8 pt-8 border-t border-white/5 text-center text-textDim text-sm">
+                &copy; 2025 CodeSphere. Built with 🐍 and ☕.
             </div>
         </div>
-    </div>
+    </footer>
 
-    <!-- Scripts -->
-    <script type="module" src="./script.js"></script>
-    <script type="module" src="./js/ui.js"></script>
-
-    <!-- PWA Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    })
-                    .catch(err => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
-        }
-    </script>
+    <!-- App Logic -->
+    <script type="module" src="./js/codesphere.js"></script>
 </body>
 </html>

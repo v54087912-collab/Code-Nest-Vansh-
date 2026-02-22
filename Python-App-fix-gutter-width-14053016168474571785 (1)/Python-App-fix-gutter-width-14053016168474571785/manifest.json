@@ -1,7 +1,7 @@
 {
   "name": "PyMobile Pro",
   "short_name": "PyMobile",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
@@ -46,14 +46,14 @@
       "name": "New File",
       "short_name": "New",
       "description": "Create a new Python file",
-      "url": "./index.html?action=new",
+      "url": "./app.html?action=new",
       "icons": [{ "src": "./assets/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Settings",
       "short_name": "Settings",
       "description": "Open App Settings",
-      "url": "./index.html?view=settings",
+      "url": "./app.html?view=settings",
       "icons": [{ "src": "./assets/icon-192.png", "sizes": "192x192" }]
     }
   ],
